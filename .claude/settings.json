@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npx eas-cli update *)",
+      "Bash(npx eas-cli build:list*)",
+      "Bash(npx eas-cli build:cancel*)"
+    ]
+  }
+}
