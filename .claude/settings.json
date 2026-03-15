@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(grep *)",
       "Bash(pnpm *)",
       "Bash(npx eas-cli@latest update *)",
       "Bash(npx eas-cli@latest build:list*)",
