@@ -1,0 +1,8 @@
+export const VOICE_THRESHOLD_DB = -35;
+export const SILENCE_THRESHOLD_DB = -45;
+export const VOICE_ONSET_MS = 250;
+export const SILENCE_DURATION_MS = 1500;
+export const MIN_RECORDING_MS = 500;
+export const LEVEL_HISTORY_SIZE = 40;
+export const DB_FLOOR = -70;
+export const DB_CEIL = -10;
