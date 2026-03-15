@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(cat:*)",
+      "Bash(ls:*)",
       "Bash(grep *)",
       "Bash(pnpm *)",
       "Bash(npx eas-cli@latest update *)",
