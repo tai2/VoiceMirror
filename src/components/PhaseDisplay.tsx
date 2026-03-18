@@ -6,12 +6,14 @@ const PHASE_LABEL: Record<Phase, string> = {
   idle: 'Listening…',
   recording: 'Recording',
   playing: 'Playing back',
+  paused: 'Paused',
 };
 
 const PHASE_COLOR: Record<Phase, string> = {
   idle: '#4A9EFF',
   recording: '#FF4444',
   playing: '#44BB44',
+  paused: '#AAAAAA',
 };
 
 type Props = { phase: Phase };

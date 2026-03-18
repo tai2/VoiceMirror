@@ -27,6 +27,7 @@ export function useVoiceMirror(): VoiceMirrorState {
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
+  const playerNodeRef = useRef<ReturnType<AudioContext['createBufferSource']> | null>(null);
 
   const phaseRef = useRef<Phase>('idle');
   const voiceStartTimeRef = useRef<number | null>(null);
@@ -170,13 +171,42 @@ export function useVoiceMirror(): VoiceMirrorState {
     const voiceStartSecs = (voiceStartFrameRef.current - bufferStartFrame) / ctx.sampleRate;
 
     const playerNode = ctx.createBufferSource();
+    playerNodeRef.current = playerNode;
     playerNode.buffer = audioBuffer;
     playerNode.connect(ctx.destination);
     playerNode.onEnded = () => {
+      playerNodeRef.current = null;
       void startMonitoring();
     };
     playerNode.start(0, voiceStartSecs);
   }
 
-  return { phase, levelHistory, hasPermission, permissionDenied };
+  async function pauseMonitoring() {
+    if (playerNodeRef.current) {
+      playerNodeRef.current.onEnded = null;
+      playerNodeRef.current.stop();
+      playerNodeRef.current = null;
+    }
+    const recorder = audioRecorderRef.current!;
+    recorder.clearOnAudioReady();
+    await recorder.stop();
+    await AudioManager.setAudioSessionActivity(false);
+    phaseRef.current = 'paused';
+    setPhase('paused');
+    setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
+  }
+
+  async function resumeMonitoring() {
+    await startMonitoring();
+  }
+
+  function togglePause() {
+    if (phaseRef.current === 'paused') {
+      void resumeMonitoring();
+    } else {
+      void pauseMonitoring();
+    }
+  }
+
+  return { phase, levelHistory, hasPermission, permissionDenied, togglePause };
 }

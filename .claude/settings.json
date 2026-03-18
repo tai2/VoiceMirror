@@ -10,7 +10,8 @@
       "Bash(npx eas-cli@latest build:list*)",
       "Bash(npx eas-cli@latest build:cancel*)",
       "Bash(mkdir -p src/*)",
-      "Edit(research.md)"
+      "Edit(research.md)",
+      "Edit(plans/*.md)"
     ]
   }
 }
