@@ -11,6 +11,8 @@
     "build:dev:ios": "npx eas-cli@latest build --profile development --platform ios",
     "build:dev:android": "npx eas-cli@latest build --profile development --platform android",
     "build:preview": "npx eas-cli@latest build --profile preview --platform all",
+    "build:preview:ios": "npx eas-cli@latest build --profile preview --platform ios",
+    "build:preview:android": "npx eas-cli@latest build --profile preview --platform android",
     "build:prod": "npx eas-cli@latest build --profile production --platform all",
     "device:register": "npx eas-cli@latest device:create"
   },
