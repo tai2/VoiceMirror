@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useVoiceMirror } from '../hooks/useVoiceMirror';
 import { AudioLevelMeter } from '../components/AudioLevelMeter';
 import { PhaseDisplay } from '../components/PhaseDisplay';
 
 export function VoiceMirrorScreen() {
-  const { phase, levelHistory, hasPermission, permissionDenied } = useVoiceMirror();
+  const { phase, levelHistory, hasPermission, permissionDenied, togglePause } = useVoiceMirror();
+  const isPaused = phase === 'paused';
 
   if (permissionDenied) {
     return (
@@ -36,7 +37,15 @@ export function VoiceMirrorScreen() {
         <View style={styles.meterContainer}>
           <AudioLevelMeter history={levelHistory} phase={phase} />
         </View>
-        <Text style={styles.hint}>Speak to begin. Silence ends the take.</Text>
+        <Text style={styles.hint}>
+          {isPaused ? 'Monitoring paused.' : 'Speak to begin. Silence ends the take.'}
+        </Text>
+        <Pressable
+          onPress={togglePause}
+          style={({ pressed }) => [styles.pauseButton, pressed && styles.pauseButtonPressed]}
+        >
+          <Text style={styles.pauseButtonLabel}>{isPaused ? 'Resume' : 'Pause'}</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -62,6 +71,20 @@ const styles = StyleSheet.create({
     color: '#AAA',
     fontSize: 14,
     textAlign: 'center',
+  },
+  pauseButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 30,
+    backgroundColor: '#EEEEEE',
+  },
+  pauseButtonPressed: {
+    backgroundColor: '#DDDDDD',
+  },
+  pauseButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555555',
   },
   errorTitle: {
     fontSize: 18,
