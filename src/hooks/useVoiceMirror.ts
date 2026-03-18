@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  useAudioRecorder,
-  useAudioPlayer,
-  useAudioRecorderState,
-  useAudioPlayerStatus,
-  requestRecordingPermissionsAsync,
-  RecordingPresets,
-  setAudioModeAsync,
-} from 'expo-audio';
+import { AudioContext, AudioRecorder, AudioManager } from 'react-native-audio-api';
 import {
   VOICE_THRESHOLD_DB,
   SILENCE_THRESHOLD_DB,
@@ -20,6 +12,11 @@ import {
 } from '../constants/audio';
 import type { Phase, VoiceMirrorState } from './types';
 
+const SAMPLE_RATE = 44100;
+const BUFFER_LENGTH = 4096;
+const CHANNEL_COUNT = 1;
+const MAX_IDLE_BUFFER_SECS = 30;
+
 export function useVoiceMirror(): VoiceMirrorState {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hasPermission, setHasPermission] = useState(false);
@@ -28,62 +25,67 @@ export function useVoiceMirror(): VoiceMirrorState {
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
 
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioRecorderRef = useRef<AudioRecorder | null>(null);
+
+  const phaseRef = useRef<Phase>('idle');
   const voiceStartTimeRef = useRef<number | null>(null);
   const silenceStartTimeRef = useRef<number | null>(null);
-  const voiceStartMsRef = useRef<number>(0);
 
-  const recorder = useAudioRecorder({
-    ...RecordingPresets.HIGH_QUALITY,
-    isMeteringEnabled: true,
-  });
-  const player = useAudioPlayer(null);
-
-  const recorderState = useAudioRecorderState(recorder, 100);
-  const playerStatus = useAudioPlayerStatus(player);
+  const chunksRef = useRef<Float32Array[]>([]);
+  const totalFramesRef = useRef<number>(0);
+  const bufferedFramesRef = useRef<number>(0);
+  const voiceStartFrameRef = useRef<number>(0);
 
   useEffect(() => {
     (async () => {
-      const { granted } = await requestRecordingPermissionsAsync();
-      if (!granted) {
+      const status = await AudioManager.requestRecordingPermissions();
+      if (status !== 'Granted') {
         setPermissionDenied(true);
         return;
       }
       setHasPermission(true);
+      AudioManager.setAudioSessionOptions({
+        iosCategory: 'playAndRecord',
+        iosOptions: ['defaultToSpeaker'],
+      });
+      audioContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
+      audioRecorderRef.current = new AudioRecorder();
       await startMonitoring();
     })();
+
+    return () => {
+      audioRecorderRef.current?.clearOnAudioReady();
+      void audioRecorderRef.current?.stop();
+      void audioContextRef.current?.close();
+    };
   }, []);
 
-  useEffect(() => {
-    if (!recorderState.isRecording || recorderState.metering == null) return;
-
-    const db = recorderState.metering;
-    const durationMs = recorderState.durationMillis;
-
-    const normalized = Math.max(0, Math.min(1, (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)));
-    setLevelHistory(prev => [...prev.slice(1), normalized]);
-
+  function tickStateMachine(db: number, totalFrames: number, sampleRate: number) {
     const now = Date.now();
 
-    if (phase === 'idle') {
+    if (phaseRef.current === 'idle') {
       if (db > VOICE_THRESHOLD_DB) {
         if (voiceStartTimeRef.current === null) {
           voiceStartTimeRef.current = now;
-          voiceStartMsRef.current = durationMs;
+          voiceStartFrameRef.current = totalFrames;
         } else if (now - voiceStartTimeRef.current >= VOICE_ONSET_MS) {
           silenceStartTimeRef.current = null;
+          phaseRef.current = 'recording';
           setPhase('recording');
         }
       } else {
         voiceStartTimeRef.current = null;
       }
-    } else if (phase === 'recording') {
-      const recordingMs = durationMs - voiceStartMsRef.current;
+    } else if (phaseRef.current === 'recording') {
+      const speechMs = ((totalFrames - voiceStartFrameRef.current) / sampleRate) * 1000;
 
-      if (db < SILENCE_THRESHOLD_DB && recordingMs >= MIN_RECORDING_MS) {
+      if (db < SILENCE_THRESHOLD_DB && speechMs >= MIN_RECORDING_MS) {
         if (silenceStartTimeRef.current === null) {
           silenceStartTimeRef.current = now;
         } else if (now - silenceStartTimeRef.current >= SILENCE_DURATION_MS) {
           silenceStartTimeRef.current = null;
+          phaseRef.current = 'playing';
           setPhase('playing');
           void stopAndPlay();
         }
@@ -91,50 +93,89 @@ export function useVoiceMirror(): VoiceMirrorState {
         silenceStartTimeRef.current = null;
       }
     }
-  }, [recorderState, phase]);
-
-  useEffect(() => {
-    if (playerStatus.didJustFinish) {
-      void startMonitoring();
-    }
-  }, [playerStatus.didJustFinish]);
-
-  async function setRecordingMode() {
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-    });
-  }
-
-  async function setPlaybackMode() {
-    await setAudioModeAsync({
-      allowsRecording: false,
-      playsInSilentMode: true,
-      shouldRouteThroughEarpiece: false,
-    });
   }
 
   async function startMonitoring() {
-    await setRecordingMode();
+    const ctx = audioContextRef.current!;
+    const recorder = audioRecorderRef.current!;
+
+    chunksRef.current = [];
+    totalFramesRef.current = 0;
+    bufferedFramesRef.current = 0;
     voiceStartTimeRef.current = null;
     silenceStartTimeRef.current = null;
-    voiceStartMsRef.current = 0;
-    await recorder.prepareToRecordAsync();
-    recorder.record();
+    voiceStartFrameRef.current = 0;
+    phaseRef.current = 'idle';
+
+    await AudioManager.setAudioSessionActivity(true);
+    await recorder.start();
+
+    recorder.onAudioReady(
+      { sampleRate: ctx.sampleRate, bufferLength: BUFFER_LENGTH, channelCount: CHANNEL_COUNT },
+      ({ buffer, numFrames }) => {
+        const chunk = new Float32Array(numFrames);
+        buffer.copyFromChannel(chunk, 0);
+
+        chunksRef.current.push(chunk);
+        totalFramesRef.current += numFrames;
+        bufferedFramesRef.current += numFrames;
+
+        if (phaseRef.current === 'idle' && voiceStartTimeRef.current === null) {
+          const maxFrames = MAX_IDLE_BUFFER_SECS * ctx.sampleRate;
+          while (
+            chunksRef.current.length > 1 &&
+            bufferedFramesRef.current - chunksRef.current[0].length >= maxFrames
+          ) {
+            bufferedFramesRef.current -= chunksRef.current[0].length;
+            chunksRef.current.shift();
+          }
+        }
+
+        let sumSq = 0;
+        for (let i = 0; i < numFrames; i++) sumSq += chunk[i] * chunk[i];
+        const rms = Math.sqrt(sumSq / numFrames);
+        const db = 20 * Math.log10(Math.max(rms, 1e-10));
+
+        const normalized = Math.max(0, Math.min(1, (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)));
+        setLevelHistory(prev => [...prev.slice(1), normalized]);
+
+        tickStateMachine(db, totalFramesRef.current, ctx.sampleRate);
+      },
+    );
+
     setPhase('idle');
   }
 
   async function stopAndPlay() {
+    const ctx = audioContextRef.current!;
+    const recorder = audioRecorderRef.current!;
+
+    recorder.clearOnAudioReady();
     await recorder.stop();
-    const uri = recorder.uri;
-    if (!uri) {
+
+    if (chunksRef.current.length === 0) {
       await startMonitoring();
       return;
     }
-    await setPlaybackMode();
-    player.replace(uri);
-    await player.seekTo(voiceStartMsRef.current / 1000);
-    player.play();
+
+    const bufferedFrames = bufferedFramesRef.current;
+    const audioBuffer = ctx.createBuffer(1, bufferedFrames, ctx.sampleRate);
+    let offset = 0;
+    for (const chunk of chunksRef.current) {
+      audioBuffer.copyToChannel(chunk, 0, offset);
+      offset += chunk.length;
+    }
+
+    const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
+    const voiceStartSecs = (voiceStartFrameRef.current - bufferStartFrame) / ctx.sampleRate;
+
+    const playerNode = ctx.createBufferSource();
+    playerNode.buffer = audioBuffer;
+    playerNode.connect(ctx.destination);
+    playerNode.onEnded = () => {
+      void startMonitoring();
+    };
+    playerNode.start(0, voiceStartSecs);
   }
 
   return { phase, levelHistory, hasPermission, permissionDenied };

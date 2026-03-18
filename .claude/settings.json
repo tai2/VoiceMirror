@@ -5,10 +5,12 @@
       "Bash(ls:*)",
       "Bash(grep *)",
       "Bash(pnpm *)",
+      "Bash(npx expo:*)",
       "Bash(npx eas-cli@latest update *)",
       "Bash(npx eas-cli@latest build:list*)",
       "Bash(npx eas-cli@latest build:cancel*)",
-      "Bash(mkdir -p src/*)"
+      "Bash(mkdir -p src/*)",
+      "Edit(research.md)"
     ]
   }
 }

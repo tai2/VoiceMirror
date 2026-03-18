@@ -16,14 +16,10 @@
       "bundleIdentifier": "net.tai2.voicemirror",
       "config": {
         "usesNonExemptEncryption": false
-      },
-      "infoPlist": {
-        "NSMicrophoneUsageDescription": "VoiceMirror records your voice so you can immediately hear yourself back."
       }
     },
     "android": {
       "package": "net.tai2.voicemirror",
-      "permissions": ["android.permission.RECORD_AUDIO"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -39,6 +35,15 @@
       "eas": {
         "projectId": "8e67ba08-d928-4773-ad24-5452c819b900"
       }
-    }
+    },
+    "plugins": [
+      [
+        "react-native-audio-api",
+        {
+          "iosMicrophonePermission": "VoiceMirror records your voice so you can immediately hear yourself back.",
+          "androidPermissions": ["android.permission.RECORD_AUDIO"]
+        }
+      ]
+    ]
   }
 }
