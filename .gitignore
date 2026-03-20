@@ -39,8 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-/modules/audio-encoder/ios
-/modules/audio-encoder/android
+/modules/audio-encoder/android/build
 
 # Claude code workflow
 research.md
