@@ -1,10 +1,14 @@
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useVoiceMirror } from '../hooks/useVoiceMirror';
+import { useRecordings } from '../hooks/useRecordings';
 import { AudioLevelMeter } from '../components/AudioLevelMeter';
 import { PhaseDisplay } from '../components/PhaseDisplay';
+import { RecordingsList } from '../components/RecordingsList';
 
 export function VoiceMirrorScreen() {
-  const { phase, levelHistory, hasPermission, permissionDenied, togglePause } = useVoiceMirror();
+  const { recordings, playState, addRecording, togglePlay } = useRecordings();
+  const { phase, levelHistory, hasPermission, permissionDenied, recordingError, togglePause } =
+    useVoiceMirror(addRecording);
   const isPaused = phase === 'paused';
 
   if (permissionDenied) {
@@ -32,7 +36,7 @@ export function VoiceMirrorScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.center}>
+      <View style={styles.monitor}>
         <PhaseDisplay phase={phase} />
         <View style={styles.meterContainer}>
           <AudioLevelMeter history={levelHistory} phase={phase} />
@@ -40,6 +44,7 @@ export function VoiceMirrorScreen() {
         <Text style={styles.hint}>
           {isPaused ? 'Monitoring paused.' : 'Speak to begin. Silence ends the take.'}
         </Text>
+        {recordingError && <Text style={styles.recordingError}>{recordingError}</Text>}
         <Pressable
           onPress={togglePause}
           style={({ pressed }) => [styles.pauseButton, pressed && styles.pauseButtonPressed]}
@@ -47,6 +52,14 @@ export function VoiceMirrorScreen() {
           <Text style={styles.pauseButtonLabel}>{isPaused ? 'Resume' : 'Pause'}</Text>
         </Pressable>
       </View>
+
+      <View style={styles.divider} />
+
+      <RecordingsList
+        recordings={recordings}
+        playState={playState}
+        onTogglePlay={togglePlay}
+      />
     </SafeAreaView>
   );
 }
@@ -61,7 +74,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    gap: 32,
+  },
+  monitor: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 32,
+    gap: 24,
   },
   meterContainer: {
     width: '100%',
@@ -85,6 +103,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#555555',
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#DDD',
+  },
+  recordingError: {
+    color: '#CC3333',
+    fontSize: 14,
+    textAlign: 'center',
   },
   errorTitle: {
     fontSize: 18,

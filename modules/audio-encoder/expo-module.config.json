@@ -1,0 +1,10 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "podspecPath": "./ios/AudioEncoder.podspec",
+    "modules": ["AudioEncoderModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.audioencoder.AudioEncoderModule"]
+  }
+}

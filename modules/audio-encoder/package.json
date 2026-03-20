@@ -1,0 +1,13 @@
+{
+  "name": "audio-encoder",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "expo": {
+    "autolinking": {
+      "ios": {},
+      "android": {
+        "sourceDir": "./android"
+      }
+    }
+  }
+}

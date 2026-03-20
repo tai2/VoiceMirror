@@ -4,6 +4,7 @@
       "Bash(cat:*)",
       "Bash(ls:*)",
       "Bash(grep *)",
+      "Bash(find *)",
       "Bash(pnpm *)",
       "Bash(npx expo:*)",
       "Bash(npx eas-cli@latest update *)",
@@ -11,7 +12,13 @@
       "Bash(npx eas-cli@latest build:cancel*)",
       "Bash(mkdir -p src/*)",
       "Edit(research.md)",
-      "Edit(plans/*.md)"
+      "Edit(plans/*.md)",
+      "WebFetch(domain:docs.expo.dev)",
+      "WebFetch(domain:docs.swmansion.com)",
+      "WebSearch",
+      "Bash(pod install:*)",
+      "Bash(npx expo-modules-autolinking:*)",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }
