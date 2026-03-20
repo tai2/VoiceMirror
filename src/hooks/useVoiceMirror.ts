@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AudioContext, AudioRecorder, AudioManager } from 'react-native-audio-api';
+import { File } from 'expo-file-system';
 import {
   VOICE_THRESHOLD_DB,
   SILENCE_THRESHOLD_DB,
@@ -10,17 +11,20 @@ import {
   DB_FLOOR,
   DB_CEIL,
 } from '../constants/audio';
-import type { Phase, VoiceMirrorState } from './types';
+import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types';
+import AudioEncoder from 'audio-encoder';
+import { newFilePath } from '../lib/recordings';
 
 const SAMPLE_RATE = 44100;
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
 const MAX_IDLE_BUFFER_SECS = 30;
 
-export function useVoiceMirror(): VoiceMirrorState {
+export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): VoiceMirrorState {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hasPermission, setHasPermission] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const [levelHistory, setLevelHistory] = useState<number[]>(
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
@@ -37,6 +41,9 @@ export function useVoiceMirror(): VoiceMirrorState {
   const totalFramesRef = useRef<number>(0);
   const bufferedFramesRef = useRef<number>(0);
   const voiceStartFrameRef = useRef<number>(0);
+
+  const pendingFilePathRef = useRef<string | null>(null);
+  const encoderFailedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -62,6 +69,39 @@ export function useVoiceMirror(): VoiceMirrorState {
     };
   }, []);
 
+  function beginEncoding() {
+    const ctx = audioContextRef.current!;
+    const filePath = newFilePath();
+    encoderFailedRef.current = false;
+
+    try {
+      AudioEncoder.startEncoding(filePath, ctx.sampleRate);
+      pendingFilePathRef.current = filePath;
+    } catch (e) {
+      console.error('[AudioEncoder] startEncoding failed:', e);
+      return;
+    }
+
+    const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
+    let framesCounted = 0;
+    for (const chunk of chunksRef.current) {
+      const chunkStart = bufferStartFrame + framesCounted;
+      const chunkEnd = chunkStart + chunk.length;
+      framesCounted += chunk.length;
+
+      if (chunkEnd <= voiceStartFrameRef.current) continue;
+
+      const skipInChunk = Math.max(0, voiceStartFrameRef.current - chunkStart);
+      const slice = skipInChunk > 0 ? chunk.slice(skipInChunk) : chunk;
+      try {
+        AudioEncoder.encodeChunk(slice);
+      } catch (e) {
+        console.error('[AudioEncoder] encodeChunk failed:', e);
+        encoderFailedRef.current = true;
+      }
+    }
+  }
+
   function tickStateMachine(db: number, totalFrames: number, sampleRate: number) {
     const now = Date.now();
 
@@ -74,6 +114,7 @@ export function useVoiceMirror(): VoiceMirrorState {
           silenceStartTimeRef.current = null;
           phaseRef.current = 'recording';
           setPhase('recording');
+          beginEncoding();
         }
       } else {
         voiceStartTimeRef.current = null;
@@ -107,6 +148,9 @@ export function useVoiceMirror(): VoiceMirrorState {
     silenceStartTimeRef.current = null;
     voiceStartFrameRef.current = 0;
     phaseRef.current = 'idle';
+    pendingFilePathRef.current = null;
+    encoderFailedRef.current = false;
+    setRecordingError(null);
 
     await AudioManager.setAudioSessionActivity(true);
     await recorder.start();
@@ -129,6 +173,15 @@ export function useVoiceMirror(): VoiceMirrorState {
           ) {
             bufferedFramesRef.current -= chunksRef.current[0].length;
             chunksRef.current.shift();
+          }
+        }
+
+        if (phaseRef.current === 'recording' && pendingFilePathRef.current && !encoderFailedRef.current) {
+          try {
+            AudioEncoder.encodeChunk(chunk);
+          } catch (e) {
+            console.error('[AudioEncoder] encodeChunk failed:', e);
+            encoderFailedRef.current = true;
           }
         }
 
@@ -157,6 +210,32 @@ export function useVoiceMirror(): VoiceMirrorState {
     if (chunksRef.current.length === 0) {
       await startMonitoring();
       return;
+    }
+
+    const filePath = pendingFilePathRef.current;
+    pendingFilePathRef.current = null;
+
+    let durationMs = 0;
+    if (filePath && !encoderFailedRef.current) {
+      try {
+        durationMs = await AudioEncoder.stopEncoding();
+        if (durationMs === 0) {
+          console.error(`[AudioEncoder] stopEncoding returned 0 for ${filePath}`);
+        }
+      } catch (e) {
+        console.error(`[AudioEncoder] stopEncoding threw for ${filePath}:`, e);
+      }
+    } else if (filePath && encoderFailedRef.current) {
+      console.error(`[AudioEncoder] skipped stopEncoding due to prior chunk error: ${filePath}`);
+    }
+
+    if (filePath && durationMs === 0) {
+      new File('file://' + filePath).delete();
+      setRecordingError('Recording failed to save.');
+    }
+
+    if (filePath && durationMs > 0) {
+      onRecordingComplete(filePath, durationMs);
     }
 
     const bufferedFrames = bufferedFramesRef.current;
@@ -208,5 +287,5 @@ export function useVoiceMirror(): VoiceMirrorState {
     }
   }
 
-  return { phase, levelHistory, hasPermission, permissionDenied, togglePause };
+  return { phase, levelHistory, hasPermission, permissionDenied, recordingError, togglePause };
 }
