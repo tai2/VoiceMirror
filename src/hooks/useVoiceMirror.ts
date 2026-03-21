@@ -47,6 +47,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
   const pendingFilePathRef = useRef<string | null>(null);
   const encoderFailedRef = useRef(false);
   const wasUserPausedRef = useRef(false);
+  const startMonitoringRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     if (!ctx) return;
@@ -64,7 +65,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
         iosOptions: ['defaultToSpeaker'],
       });
       audioRecorderRef.current = new AudioRecorder();
-      await startMonitoring();
+      await startMonitoringRef.current();
     })();
 
     return () => {
@@ -203,6 +204,8 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
 
     setPhase('idle');
   }
+
+  startMonitoringRef.current = startMonitoring;
 
   async function stopAndPlay() {
     const context = audioContextRef.current!;

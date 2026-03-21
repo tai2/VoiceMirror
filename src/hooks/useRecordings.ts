@@ -44,7 +44,7 @@ export function useRecordings(options: RecordingsOptions): RecordingsState {
       setPlayState(null);
     }
     if (notify) void options.onDidStop();
-  }, [options.onDidStop]);
+  }, [options]);
 
   const addRecording = useCallback((filePath: string, durationMs: number) => {
     const entry: Recording = {
