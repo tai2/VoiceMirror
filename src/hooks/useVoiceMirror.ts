@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AudioContext, AudioRecorder, AudioManager } from 'react-native-audio-api';
+import { AudioRecorder, AudioManager } from 'react-native-audio-api';
 import { File } from 'expo-file-system';
 import {
   VOICE_THRESHOLD_DB,
@@ -14,8 +14,8 @@ import {
 import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types';
 import AudioEncoder from 'audio-encoder';
 import { newFilePath } from '../lib/recordings';
+import { useAudioContext } from '../context/AudioContextProvider';
 
-const SAMPLE_RATE = 44100;
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
 const MAX_IDLE_BUFFER_SECS = 30;
@@ -29,9 +29,11 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
 
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const ctx = useAudioContext();
+
+  const audioContextRef = useRef(ctx);
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
-  const playerNodeRef = useRef<ReturnType<AudioContext['createBufferSource']> | null>(null);
+  const playerNodeRef = useRef<ReturnType<NonNullable<typeof ctx>['createBufferSource']> | null>(null);
 
   const phaseRef = useRef<Phase>('idle');
   const voiceStartTimeRef = useRef<number | null>(null);
@@ -44,8 +46,12 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
 
   const pendingFilePathRef = useRef<string | null>(null);
   const encoderFailedRef = useRef(false);
+  const wasUserPausedRef = useRef(false);
 
   useEffect(() => {
+    if (!ctx) return;
+    audioContextRef.current = ctx;
+
     (async () => {
       const status = await AudioManager.requestRecordingPermissions();
       if (status !== 'Granted') {
@@ -57,7 +63,6 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
         iosCategory: 'playAndRecord',
         iosOptions: ['defaultToSpeaker'],
       });
-      audioContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
       audioRecorderRef.current = new AudioRecorder();
       await startMonitoring();
     })();
@@ -65,17 +70,16 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     return () => {
       audioRecorderRef.current?.clearOnAudioReady();
       void audioRecorderRef.current?.stop();
-      void audioContextRef.current?.close();
     };
-  }, []);
+  }, [ctx]);
 
   function beginEncoding() {
-    const ctx = audioContextRef.current!;
+    const context = audioContextRef.current!;
     const filePath = newFilePath();
     encoderFailedRef.current = false;
 
     try {
-      AudioEncoder.startEncoding(filePath, ctx.sampleRate);
+      AudioEncoder.startEncoding(filePath, context.sampleRate);
       pendingFilePathRef.current = filePath;
     } catch (e) {
       console.error('[AudioEncoder] startEncoding failed:', e);
@@ -138,7 +142,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
   }
 
   async function startMonitoring() {
-    const ctx = audioContextRef.current!;
+    const context = audioContextRef.current!;
     const recorder = audioRecorderRef.current!;
 
     chunksRef.current = [];
@@ -156,7 +160,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     await recorder.start();
 
     recorder.onAudioReady(
-      { sampleRate: ctx.sampleRate, bufferLength: BUFFER_LENGTH, channelCount: CHANNEL_COUNT },
+      { sampleRate: context.sampleRate, bufferLength: BUFFER_LENGTH, channelCount: CHANNEL_COUNT },
       ({ buffer, numFrames }) => {
         const chunk = new Float32Array(numFrames);
         buffer.copyFromChannel(chunk, 0);
@@ -166,7 +170,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
         bufferedFramesRef.current += numFrames;
 
         if (phaseRef.current === 'idle' && voiceStartTimeRef.current === null) {
-          const maxFrames = MAX_IDLE_BUFFER_SECS * ctx.sampleRate;
+          const maxFrames = MAX_IDLE_BUFFER_SECS * context.sampleRate;
           while (
             chunksRef.current.length > 1 &&
             bufferedFramesRef.current - chunksRef.current[0].length >= maxFrames
@@ -193,7 +197,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
         const normalized = Math.max(0, Math.min(1, (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)));
         setLevelHistory(prev => [...prev.slice(1), normalized]);
 
-        tickStateMachine(db, totalFramesRef.current, ctx.sampleRate);
+        tickStateMachine(db, totalFramesRef.current, context.sampleRate);
       },
     );
 
@@ -201,7 +205,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
   }
 
   async function stopAndPlay() {
-    const ctx = audioContextRef.current!;
+    const context = audioContextRef.current!;
     const recorder = audioRecorderRef.current!;
 
     recorder.clearOnAudioReady();
@@ -239,7 +243,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     }
 
     const bufferedFrames = bufferedFramesRef.current;
-    const audioBuffer = ctx.createBuffer(1, bufferedFrames, ctx.sampleRate);
+    const audioBuffer = context.createBuffer(1, bufferedFrames, context.sampleRate);
     let offset = 0;
     for (const chunk of chunksRef.current) {
       audioBuffer.copyToChannel(chunk, 0, offset);
@@ -247,12 +251,12 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     }
 
     const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
-    const voiceStartSecs = (voiceStartFrameRef.current - bufferStartFrame) / ctx.sampleRate;
+    const voiceStartSecs = (voiceStartFrameRef.current - bufferStartFrame) / context.sampleRate;
 
-    const playerNode = ctx.createBufferSource();
+    const playerNode = context.createBufferSource();
     playerNodeRef.current = playerNode;
     playerNode.buffer = audioBuffer;
-    playerNode.connect(ctx.destination);
+    playerNode.connect(context.destination);
     playerNode.onEnded = () => {
       playerNodeRef.current = null;
       void startMonitoring();
@@ -287,5 +291,51 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     }
   }
 
-  return { phase, levelHistory, hasPermission, permissionDenied, recordingError, togglePause };
+  async function suspendForListPlayback() {
+    wasUserPausedRef.current = phaseRef.current === 'paused';
+
+    if (playerNodeRef.current) {
+      playerNodeRef.current.onEnded = null;
+      playerNodeRef.current.stop();
+      playerNodeRef.current = null;
+    }
+
+    if (phaseRef.current !== 'paused') {
+      audioRecorderRef.current?.clearOnAudioReady();
+      await audioRecorderRef.current?.stop();
+      phaseRef.current = 'idle';
+      setPhase('idle');
+    } else {
+      await AudioManager.setAudioSessionActivity(true);
+    }
+
+    await audioContextRef.current?.resume();
+  }
+
+  async function resumeFromListPlayback() {
+    if (wasUserPausedRef.current) {
+      phaseRef.current = 'paused';
+      setPhase('paused');
+      // Suspend the context before deactivating the session so the native render
+      // thread is cleanly stopped. Without this, the context JS state stays
+      // 'running' while the render thread is killed by session deactivation,
+      // and a subsequent ctx.resume() sees 'running' and becomes a no-op,
+      // leaving the render thread dead on the next list play.
+      await audioContextRef.current?.suspend();
+      await AudioManager.setAudioSessionActivity(false);
+    } else {
+      await startMonitoring();
+    }
+  }
+
+  return {
+    phase,
+    levelHistory,
+    hasPermission,
+    permissionDenied,
+    recordingError,
+    togglePause,
+    suspendForListPlayback,
+    resumeFromListPlayback,
+  };
 }

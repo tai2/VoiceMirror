@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createAudioPlayer, AudioPlayer } from 'expo-audio';
+import { decodeAudioData } from 'react-native-audio-api';
+import type { AudioBuffer, AudioBufferSourceNode } from 'react-native-audio-api';
 import { type Recording, loadRecordings, saveRecordings } from '../lib/recordings';
+import { useAudioContext } from '../context/AudioContextProvider';
 
 export type PlayState = { recordingId: string; isPlaying: boolean } | null;
+
+type RecordingsOptions = {
+  onWillPlay: () => Promise<void>;
+  onDidStop: () => Promise<void>;
+};
 
 export type RecordingsState = {
   recordings: Recording[];
@@ -11,26 +18,33 @@ export type RecordingsState = {
   togglePlay: (recording: Recording) => void;
 };
 
-export function useRecordings(): RecordingsState {
+export function useRecordings(options: RecordingsOptions): RecordingsState {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [playState, setPlayState] = useState<PlayState>(null);
-  const playerRef = useRef<AudioPlayer | null>(null);
+  const ctx = useAudioContext();
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const isDecodingRef = useRef(false);
 
   useEffect(() => {
     loadRecordings().then(setRecordings);
     return () => {
-      playerRef.current?.remove();
-      playerRef.current = null;
+      if (sourceRef.current) {
+        sourceRef.current.onEnded = null;
+        sourceRef.current.stop();
+        sourceRef.current = null;
+      }
     };
   }, []);
 
-  const stopCurrentPlayer = useCallback(() => {
-    if (playerRef.current) {
-      playerRef.current.remove();
-      playerRef.current = null;
+  const stopCurrentPlayer = useCallback((notify: boolean) => {
+    if (sourceRef.current) {
+      sourceRef.current.onEnded = null;
+      sourceRef.current.stop();
+      sourceRef.current = null;
       setPlayState(null);
     }
-  }, []);
+    if (notify) void options.onDidStop();
+  }, [options.onDidStop]);
 
   const addRecording = useCallback((filePath: string, durationMs: number) => {
     const entry: Recording = {
@@ -46,28 +60,49 @@ export function useRecordings(): RecordingsState {
     });
   }, []);
 
-  const togglePlay = useCallback((recording: Recording) => {
+  const togglePlay = useCallback(async (recording: Recording) => {
+    if (!ctx) return;
+
     if (playState?.recordingId === recording.id && playState.isPlaying) {
-      stopCurrentPlayer();
+      stopCurrentPlayer(true);
       return;
     }
 
-    stopCurrentPlayer();
+    if (isDecodingRef.current) return;
 
-    const player = createAudioPlayer({ uri: recording.filePath });
-    playerRef.current = player;
+    const wasAlreadyPlaying = sourceRef.current !== null;
+    stopCurrentPlayer(false);
+
+    if (!wasAlreadyPlaying) {
+      await options.onWillPlay();
+    }
+
     setPlayState({ recordingId: recording.id, isPlaying: true });
 
-    player.addListener('playbackStatusUpdate', status => {
-      if (status.didJustFinish) {
-        player.remove();
-        playerRef.current = null;
-        setPlayState(null);
-      }
-    });
+    isDecodingRef.current = true;
+    let audioBuffer: AudioBuffer;
+    try {
+      audioBuffer = await decodeAudioData(recording.filePath, ctx.sampleRate);
+    } catch (e) {
+      console.error('[useRecordings] decodeAudioData failed:', e);
+      isDecodingRef.current = false;
+      setPlayState(null);
+      await options.onDidStop();
+      return;
+    }
+    isDecodingRef.current = false;
 
-    player.play();
-  }, [playState, stopCurrentPlayer]);
+    const source = ctx.createBufferSource();
+    sourceRef.current = source;
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    source.onEnded = () => {
+      sourceRef.current = null;
+      setPlayState(null);
+      void options.onDidStop();
+    };
+    source.start(0);
+  }, [playState, ctx, stopCurrentPlayer, options]);
 
   return { recordings, playState, addRecording, togglePlay };
 }
