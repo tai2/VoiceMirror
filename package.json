@@ -14,7 +14,8 @@
     "build:preview:ios": "npx eas-cli@latest build --profile preview --platform ios",
     "build:preview:android": "npx eas-cli@latest build --profile preview --platform android",
     "build:prod": "npx eas-cli@latest build --profile production --platform all",
-    "device:register": "npx eas-cli@latest device:create"
+    "device:register": "npx eas-cli@latest device:create",
+    "lint": "expo lint"
   },
   "dependencies": {
     "audio-encoder": "file:./modules/audio-encoder",
@@ -28,6 +29,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "~55.0.0",
     "typescript": "~5.9.2"
   },
   "private": true

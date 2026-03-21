@@ -8,3 +8,8 @@ VoiceMirror is a React Native/Expo app that implements a voice mirror: it listen
 
 - mise shims are in PATH — use `pnpm` directly
 - **EAS CLI**: used via `npx eas-cli@latest` (not installed globally)
+
+## Verification
+
+- `pnpm typecheck` to check types
+- `pnpm lint` to check code styles

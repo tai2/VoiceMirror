@@ -71,6 +71,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
       audioRecorderRef.current?.clearOnAudioReady();
       void audioRecorderRef.current?.stop();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctx]);
 
   function beginEncoding() {
