@@ -7,9 +7,10 @@ type Props = {
   recordings: Recording[];
   playState: PlayState;
   onTogglePlay: (r: Recording) => void;
+  disabled: boolean;
 };
 
-export function RecordingsList({ recordings, playState, onTogglePlay }: Props) {
+export function RecordingsList({ recordings, playState, onTogglePlay, disabled }: Props) {
   if (recordings.length === 0) {
     return (
       <View style={styles.empty}>
@@ -27,6 +28,7 @@ export function RecordingsList({ recordings, playState, onTogglePlay }: Props) {
           recording={item}
           playState={playState}
           onTogglePlay={() => onTogglePlay(item)}
+          disabled={disabled}
         />
       )}
       style={styles.list}

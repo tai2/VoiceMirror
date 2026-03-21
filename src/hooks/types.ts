@@ -7,6 +7,8 @@ export type VoiceMirrorState = {
   permissionDenied: boolean;
   recordingError: string | null;
   togglePause: () => void;
+  suspendForListPlayback: () => Promise<void>;
+  resumeFromListPlayback: () => Promise<void>;
 };
 
 export type RecordingCompleteCallback = (filePath: string, durationMs: number) => void;

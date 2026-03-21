@@ -1,14 +1,38 @@
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { useRef, useCallback } from 'react';
 import { useVoiceMirror } from '../hooks/useVoiceMirror';
 import { useRecordings } from '../hooks/useRecordings';
 import { AudioLevelMeter } from '../components/AudioLevelMeter';
 import { PhaseDisplay } from '../components/PhaseDisplay';
 import { RecordingsList } from '../components/RecordingsList';
+import { AudioContextProvider } from '../context/AudioContextProvider';
 
-export function VoiceMirrorScreen() {
-  const { recordings, playState, addRecording, togglePlay } = useRecordings();
-  const { phase, levelHistory, hasPermission, permissionDenied, recordingError, togglePause } =
-    useVoiceMirror(addRecording);
+function VoiceMirrorContent() {
+  const addRecordingRef = useRef<(filePath: string, durationMs: number) => void>(() => {});
+  const suspendRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const resumeRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
+  const stableAddRecording = useCallback((filePath: string, durationMs: number) => {
+    addRecordingRef.current(filePath, durationMs);
+  }, []);
+
+  const stableSuspend = useCallback(() => suspendRef.current(), []);
+  const stableResume = useCallback(() => resumeRef.current(), []);
+
+  const {
+    phase, levelHistory, hasPermission, permissionDenied, recordingError,
+    togglePause, suspendForListPlayback, resumeFromListPlayback,
+  } = useVoiceMirror(stableAddRecording);
+
+  const { recordings, playState, addRecording, togglePlay } = useRecordings({
+    onWillPlay: stableSuspend,
+    onDidStop: stableResume,
+  });
+
+  addRecordingRef.current = addRecording;
+  suspendRef.current = suspendForListPlayback;
+  resumeRef.current = resumeFromListPlayback;
+
   const isPaused = phase === 'paused';
 
   if (permissionDenied) {
@@ -59,8 +83,17 @@ export function VoiceMirrorScreen() {
         recordings={recordings}
         playState={playState}
         onTogglePlay={togglePlay}
+        disabled={phase === 'recording'}
       />
     </SafeAreaView>
+  );
+}
+
+export function VoiceMirrorScreen() {
+  return (
+    <AudioContextProvider>
+      <VoiceMirrorContent />
+    </AudioContextProvider>
   );
 }
 

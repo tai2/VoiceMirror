@@ -22,16 +22,18 @@ type Props = {
   recording: Recording;
   playState: PlayState;
   onTogglePlay: () => void;
+  disabled: boolean;
 };
 
-export function RecordingItem({ recording, playState, onTogglePlay }: Props) {
+export function RecordingItem({ recording, playState, onTogglePlay, disabled }: Props) {
   const isPlaying = playState?.recordingId === recording.id && playState.isPlaying;
 
   return (
     <View style={styles.row}>
       <Pressable
         onPress={onTogglePlay}
-        style={({ pressed }) => [styles.playButton, pressed && styles.playButtonPressed]}
+        disabled={disabled}
+        style={({ pressed }) => [styles.playButton, disabled && styles.playButtonDisabled, pressed && styles.playButtonPressed]}
         hitSlop={8}
       >
         <Text style={styles.playIcon}>{isPlaying ? '■' : '▶'}</Text>
@@ -62,6 +64,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  playButtonDisabled: { opacity: 0.35 },
   playButtonPressed: { opacity: 0.7 },
   playIcon: { color: '#FFF', fontSize: 14, lineHeight: 16 },
   meta: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

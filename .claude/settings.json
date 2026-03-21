@@ -18,6 +18,7 @@
       "WebSearch",
       "Bash(pod install:*)",
       "Bash(npx expo-modules-autolinking:*)",
+      "Bash(./gradlew *)",
       "Bash(python3 -m json.tool)"
     ]
   }

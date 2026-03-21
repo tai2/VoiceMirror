@@ -1,3 +1,4 @@
+export const SAMPLE_RATE = 44100;
 export const VOICE_THRESHOLD_DB = -35;
 export const SILENCE_THRESHOLD_DB = -45;
 export const VOICE_ONSET_MS = 250;
