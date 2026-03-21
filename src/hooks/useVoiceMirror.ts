@@ -305,13 +305,23 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
       await audioRecorderRef.current?.stop();
       phaseRef.current = 'idle';
       setPhase('idle');
+    } else {
+      await AudioManager.setAudioSessionActivity(true);
     }
+
+    await audioContextRef.current?.resume();
   }
 
   async function resumeFromListPlayback() {
     if (wasUserPausedRef.current) {
       phaseRef.current = 'paused';
       setPhase('paused');
+      // Suspend the context before deactivating the session so the native render
+      // thread is cleanly stopped. Without this, the context JS state stays
+      // 'running' while the render thread is killed by session deactivation,
+      // and a subsequent ctx.resume() sees 'running' and becomes a no-op,
+      // leaving the render thread dead on the next list play.
+      await audioContextRef.current?.suspend();
       await AudioManager.setAudioSessionActivity(false);
     } else {
       await startMonitoring();
