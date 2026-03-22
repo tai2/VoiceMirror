@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { decodeAudioData } from 'react-native-audio-api';
-import type { AudioBuffer, AudioBufferSourceNode } from 'react-native-audio-api';
-import { type Recording, loadRecordings, saveRecordings } from '../lib/recordings';
-import { useAudioContext } from '../context/AudioContextProvider';
+import type { AudioContext, AudioBufferSourceNode } from 'react-native-audio-api';
+import type { Recording } from '../lib/recordings';
+import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
+import type { IAudioDecoderService } from '../services/AudioDecoderService';
 
 export type PlayState = { recordingId: string; isPlaying: boolean } | null;
 
@@ -18,15 +18,23 @@ export type RecordingsState = {
   togglePlay: (recording: Recording) => void;
 };
 
-export function useRecordings(options: RecordingsOptions): RecordingsState {
+export function useRecordings(
+  options: RecordingsOptions,
+  audioContext: AudioContext | null,
+  repository: IRecordingsRepository,
+  decoderService: IAudioDecoderService,
+): RecordingsState {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [playState, setPlayState] = useState<PlayState>(null);
-  const ctx = useAudioContext();
+  const recordingsRef = useRef<Recording[]>(recordings);
+  recordingsRef.current = recordings;
+  const repositoryRef = useRef(repository);
+  repositoryRef.current = repository;
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isDecodingRef = useRef(false);
 
   useEffect(() => {
-    loadRecordings().then(setRecordings);
+    repository.load().then(setRecordings);
     return () => {
       if (sourceRef.current) {
         sourceRef.current.onEnded = null;
@@ -34,7 +42,7 @@ export function useRecordings(options: RecordingsOptions): RecordingsState {
         sourceRef.current = null;
       }
     };
-  }, []);
+  }, [repository]);
 
   const stopCurrentPlayer = useCallback((notify: boolean) => {
     if (sourceRef.current) {
@@ -53,15 +61,13 @@ export function useRecordings(options: RecordingsOptions): RecordingsState {
       recordedAt: new Date().toISOString(),
       durationMs,
     };
-    setRecordings(prev => {
-      const next = [entry, ...prev];
-      saveRecordings(next);
-      return next;
-    });
+    const next = [entry, ...recordingsRef.current];
+    setRecordings(next);
+    repositoryRef.current.save(next);
   }, []);
 
   const togglePlay = useCallback(async (recording: Recording) => {
-    if (!ctx) return;
+    if (!audioContext) return;
 
     if (playState?.recordingId === recording.id && playState.isPlaying) {
       stopCurrentPlayer(true);
@@ -80,9 +86,9 @@ export function useRecordings(options: RecordingsOptions): RecordingsState {
     setPlayState({ recordingId: recording.id, isPlaying: true });
 
     isDecodingRef.current = true;
-    let audioBuffer: AudioBuffer;
+    let audioBuffer;
     try {
-      audioBuffer = await decodeAudioData(recording.filePath, ctx.sampleRate);
+      audioBuffer = await decoderService.decodeAudioData(recording.filePath, audioContext.sampleRate);
     } catch (e) {
       console.error('[useRecordings] decodeAudioData failed:', e);
       isDecodingRef.current = false;
@@ -92,17 +98,17 @@ export function useRecordings(options: RecordingsOptions): RecordingsState {
     }
     isDecodingRef.current = false;
 
-    const source = ctx.createBufferSource();
+    const source = audioContext.createBufferSource();
     sourceRef.current = source;
     source.buffer = audioBuffer;
-    source.connect(ctx.destination);
+    source.connect(audioContext.destination);
     source.onEnded = () => {
       sourceRef.current = null;
       setPlayState(null);
       void options.onDidStop();
     };
     source.start(0);
-  }, [playState, ctx, stopCurrentPlayer, options]);
+  }, [playState, audioContext, decoderService, stopCurrentPlayer, options]);
 
   return { recordings, playState, addRecording, togglePlay };
 }

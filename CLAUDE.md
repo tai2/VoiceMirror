@@ -14,3 +14,12 @@ VoiceMirror is a React Native/Expo app that implements a voice mirror: it listen
 - `pnpm typecheck` to check types
 - `pnpm lint` to check code styles
   - Don't disable rule unless explicitly asked by developer
+
+## Design and unit testing
+
+- Extract meaningful functionality unit which depends on uncontrollable API(e.g. `react-native-audio-api`, 
+  `expo-file-system`) as service under @src/services or repository under @src/repositories so that we can replace it
+  with stub in unit testing. Those services should be injected through arguments as dependency to custom hooks. This
+  allows us to focus on testing application logic.
+- On UI components, services should be injected through context provider and its hook. This allows us to switch it with
+  stub in unit testing.

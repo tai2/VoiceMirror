@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AudioRecorder, AudioManager } from 'react-native-audio-api';
-import { File } from 'expo-file-system';
+import type { AudioContext } from 'react-native-audio-api';
 import {
   VOICE_THRESHOLD_DB,
   SILENCE_THRESHOLD_DB,
@@ -12,15 +11,21 @@ import {
   DB_CEIL,
 } from '../constants/audio';
 import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types';
-import AudioEncoder from 'audio-encoder';
-import { newFilePath } from '../lib/recordings';
-import { useAudioContext } from '../context/AudioContextProvider';
+import type { IAudioRecordingService, IAudioRecorder } from '../services/AudioRecordingService';
+import type { IAudioEncoderService } from '../services/AudioEncoderService';
+import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
 
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
 const MAX_IDLE_BUFFER_SECS = 30;
 
-export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): VoiceMirrorState {
+export function useVoiceMirror(
+  onRecordingComplete: RecordingCompleteCallback,
+  audioContext: AudioContext | null,
+  recordingService: IAudioRecordingService,
+  encoderService: IAudioEncoderService,
+  repository: IRecordingsRepository,
+): VoiceMirrorState {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hasPermission, setHasPermission] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -29,11 +34,9 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
 
-  const ctx = useAudioContext();
-
-  const audioContextRef = useRef(ctx);
-  const audioRecorderRef = useRef<AudioRecorder | null>(null);
-  const playerNodeRef = useRef<ReturnType<NonNullable<typeof ctx>['createBufferSource']> | null>(null);
+  const audioContextRef = useRef(audioContext);
+  const audioRecorderRef = useRef<IAudioRecorder | null>(null);
+  const playerNodeRef = useRef<ReturnType<NonNullable<typeof audioContext>['createBufferSource']> | null>(null);
 
   const phaseRef = useRef<Phase>('idle');
   const voiceStartTimeRef = useRef<number | null>(null);
@@ -50,21 +53,21 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
   const startMonitoringRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
-    if (!ctx) return;
-    audioContextRef.current = ctx;
+    if (!audioContext) return;
+    audioContextRef.current = audioContext;
 
     (async () => {
-      const status = await AudioManager.requestRecordingPermissions();
+      const status = await recordingService.requestRecordingPermissions();
       if (status !== 'Granted') {
         setPermissionDenied(true);
         return;
       }
       setHasPermission(true);
-      AudioManager.setAudioSessionOptions({
+      recordingService.setAudioSessionOptions({
         iosCategory: 'playAndRecord',
         iosOptions: ['defaultToSpeaker'],
       });
-      audioRecorderRef.current = new AudioRecorder();
+      audioRecorderRef.current = recordingService.createRecorder();
       await startMonitoringRef.current();
     })();
 
@@ -72,15 +75,15 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
       audioRecorderRef.current?.clearOnAudioReady();
       void audioRecorderRef.current?.stop();
     };
-  }, [ctx]);
+  }, [audioContext, recordingService]);
 
   function beginEncoding() {
     const context = audioContextRef.current!;
-    const filePath = newFilePath();
+    const filePath = repository.newFilePath();
     encoderFailedRef.current = false;
 
     try {
-      AudioEncoder.startEncoding(filePath, context.sampleRate);
+      encoderService.startEncoding(filePath, context.sampleRate);
       pendingFilePathRef.current = filePath;
     } catch (e) {
       console.error('[AudioEncoder] startEncoding failed:', e);
@@ -99,7 +102,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
       const skipInChunk = Math.max(0, voiceStartFrameRef.current - chunkStart);
       const slice = skipInChunk > 0 ? chunk.slice(skipInChunk) : chunk;
       try {
-        AudioEncoder.encodeChunk(slice);
+        encoderService.encodeChunk(slice);
       } catch (e) {
         console.error('[AudioEncoder] encodeChunk failed:', e);
         encoderFailedRef.current = true;
@@ -157,15 +160,12 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     encoderFailedRef.current = false;
     setRecordingError(null);
 
-    await AudioManager.setAudioSessionActivity(true);
-    await recorder.start();
+    await recordingService.setAudioSessionActivity(true);
+    recorder.start();
 
     recorder.onAudioReady(
       { sampleRate: context.sampleRate, bufferLength: BUFFER_LENGTH, channelCount: CHANNEL_COUNT },
-      ({ buffer, numFrames }) => {
-        const chunk = new Float32Array(numFrames);
-        buffer.copyFromChannel(chunk, 0);
-
+      ({ chunk, numFrames }) => {
         chunksRef.current.push(chunk);
         totalFramesRef.current += numFrames;
         bufferedFramesRef.current += numFrames;
@@ -183,7 +183,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
 
         if (phaseRef.current === 'recording' && pendingFilePathRef.current && !encoderFailedRef.current) {
           try {
-            AudioEncoder.encodeChunk(chunk);
+            encoderService.encodeChunk(chunk);
           } catch (e) {
             console.error('[AudioEncoder] encodeChunk failed:', e);
             encoderFailedRef.current = true;
@@ -212,7 +212,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     const recorder = audioRecorderRef.current!;
 
     recorder.clearOnAudioReady();
-    await recorder.stop();
+    recorder.stop();
 
     if (chunksRef.current.length === 0) {
       await startMonitoring();
@@ -225,7 +225,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     let durationMs = 0;
     if (filePath && !encoderFailedRef.current) {
       try {
-        durationMs = await AudioEncoder.stopEncoding();
+        durationMs = await encoderService.stopEncoding();
         if (durationMs === 0) {
           console.error(`[AudioEncoder] stopEncoding returned 0 for ${filePath}`);
         }
@@ -237,7 +237,7 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     }
 
     if (filePath && durationMs === 0) {
-      new File('file://' + filePath).delete();
+      repository.deleteFile(filePath);
       setRecordingError('Recording failed to save.');
     }
 
@@ -275,8 +275,8 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     }
     const recorder = audioRecorderRef.current!;
     recorder.clearOnAudioReady();
-    await recorder.stop();
-    await AudioManager.setAudioSessionActivity(false);
+    recorder.stop();
+    await recordingService.setAudioSessionActivity(false);
     phaseRef.current = 'paused';
     setPhase('paused');
     setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
@@ -305,11 +305,11 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
 
     if (phaseRef.current !== 'paused') {
       audioRecorderRef.current?.clearOnAudioReady();
-      await audioRecorderRef.current?.stop();
+      audioRecorderRef.current?.stop();
       phaseRef.current = 'idle';
       setPhase('idle');
     } else {
-      await AudioManager.setAudioSessionActivity(true);
+      await recordingService.setAudioSessionActivity(true);
     }
 
     await audioContextRef.current?.resume();
@@ -319,13 +319,8 @@ export function useVoiceMirror(onRecordingComplete: RecordingCompleteCallback): 
     if (wasUserPausedRef.current) {
       phaseRef.current = 'paused';
       setPhase('paused');
-      // Suspend the context before deactivating the session so the native render
-      // thread is cleanly stopped. Without this, the context JS state stays
-      // 'running' while the render thread is killed by session deactivation,
-      // and a subsequent ctx.resume() sees 'running' and becomes a no-op,
-      // leaving the render thread dead on the next list play.
       await audioContextRef.current?.suspend();
-      await AudioManager.setAudioSessionActivity(false);
+      await recordingService.setAudioSessionActivity(false);
     } else {
       await startMonitoring();
     }

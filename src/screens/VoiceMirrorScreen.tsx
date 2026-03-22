@@ -5,9 +5,13 @@ import { useRecordings } from '../hooks/useRecordings';
 import { AudioLevelMeter } from '../components/AudioLevelMeter';
 import { PhaseDisplay } from '../components/PhaseDisplay';
 import { RecordingsList } from '../components/RecordingsList';
-import { AudioContextProvider } from '../context/AudioContextProvider';
+import { AudioContextProvider, useAudioContext } from '../context/AudioContextProvider';
+import { useServices } from '../context/ServicesProvider';
 
 function VoiceMirrorContent() {
+  const audioContext = useAudioContext();
+  const { recordingService, encoderService, decoderService, recordingsRepository } = useServices();
+
   const addRecordingRef = useRef<(filePath: string, durationMs: number) => void>(() => {});
   const suspendRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const resumeRef = useRef<() => Promise<void>>(() => Promise.resolve());
@@ -22,12 +26,14 @@ function VoiceMirrorContent() {
   const {
     phase, levelHistory, hasPermission, permissionDenied, recordingError,
     togglePause, suspendForListPlayback, resumeFromListPlayback,
-  } = useVoiceMirror(stableAddRecording);
+  } = useVoiceMirror(stableAddRecording, audioContext, recordingService, encoderService, recordingsRepository);
 
-  const { recordings, playState, addRecording, togglePlay } = useRecordings({
-    onWillPlay: stableSuspend,
-    onDidStop: stableResume,
-  });
+  const { recordings, playState, addRecording, togglePlay } = useRecordings(
+    { onWillPlay: stableSuspend, onDidStop: stableResume },
+    audioContext,
+    recordingsRepository,
+    decoderService,
+  );
 
   addRecordingRef.current = addRecording;
   suspendRef.current = suspendForListPlayback;
