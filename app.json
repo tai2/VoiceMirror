@@ -37,6 +37,7 @@
       }
     },
     "plugins": [
+      "./plugins/withCleartextTraffic",
       [
         "react-native-audio-api",
         {
