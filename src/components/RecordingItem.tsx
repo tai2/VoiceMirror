@@ -31,6 +31,8 @@ export function RecordingItem({ recording, playState, onTogglePlay, disabled }: 
   return (
     <View style={styles.row}>
       <Pressable
+        testID={`play-recording-${recording.id}`}
+        accessibilityLabel={`play-recording-${recording.id}`}
         onPress={onTogglePlay}
         disabled={disabled}
         style={({ pressed }) => [styles.playButton, disabled && styles.playButtonDisabled, pressed && styles.playButtonPressed]}

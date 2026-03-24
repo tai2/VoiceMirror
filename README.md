@@ -42,6 +42,46 @@ npx eas-cli whoami        # check current login
 npx eas-cli login         # log in
 ```
 
+## Unit tests
+
+```sh
+pnpm test:ci
+```
+
+## E2E tests
+
+E2E tests use WebDriverIO + Appium to drive the app on a simulator/emulator. An in-app WebSocket bridge replaces the real microphone so tests can inject audio programmatically.
+
+### Prerequisites
+
+- Copy `.env.example` to `.env` and adjust the simulator/emulator names if yours differ.
+- An Android emulator or iOS simulator matching the names in `.env` must be available.
+
+### 1. Build the E2E binary
+
+Local builds (recommended for development):
+
+```sh
+pnpm run build:e2e:android:local   # → artifacts/VoiceMirror.apk
+pnpm run build:e2e:ios:local       # → artifacts/VoiceMirror.app
+```
+
+Or build on EAS (cloud):
+
+```sh
+pnpm run build:e2e:android
+pnpm run build:e2e:ios
+```
+
+When using EAS, download the artifact and place it in `artifacts/`.
+
+### 2. Run the tests
+
+```sh
+pnpm run e2e:android
+pnpm run e2e:ios
+```
+
 ## Register a device (iOS internal distribution)
 
 ```sh

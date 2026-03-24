@@ -1,32 +1,57 @@
-import { View, Text, StyleSheet, SafeAreaView, Pressable } from 'react-native';
-import { useRef, useCallback } from 'react';
-import { useVoiceMirror } from '../hooks/useVoiceMirror';
-import { useRecordings } from '../hooks/useRecordings';
-import { AudioLevelMeter } from '../components/AudioLevelMeter';
-import { PhaseDisplay } from '../components/PhaseDisplay';
-import { RecordingsList } from '../components/RecordingsList';
-import { AudioContextProvider, useAudioContext } from '../context/AudioContextProvider';
-import { useServices } from '../context/ServicesProvider';
+import { View, Text, StyleSheet, SafeAreaView, Pressable } from "react-native";
+import { useRef, useCallback } from "react";
+import { useVoiceMirror } from "../hooks/useVoiceMirror";
+import { useRecordings } from "../hooks/useRecordings";
+import { AudioLevelMeter } from "../components/AudioLevelMeter";
+import { PhaseDisplay } from "../components/PhaseDisplay";
+import { RecordingsList } from "../components/RecordingsList";
+import {
+  AudioContextProvider,
+  useAudioContext,
+} from "../context/AudioContextProvider";
+import { useServices } from "../context/ServicesProvider";
 
 function VoiceMirrorContent() {
   const audioContext = useAudioContext();
-  const { recordingService, encoderService, decoderService, recordingsRepository } = useServices();
+  const {
+    recordingService,
+    encoderService,
+    decoderService,
+    recordingsRepository,
+  } = useServices();
 
-  const addRecordingRef = useRef<(filePath: string, durationMs: number) => void>(() => {});
+  const addRecordingRef = useRef<
+    (filePath: string, durationMs: number) => void
+  >(() => {});
   const suspendRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const resumeRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-  const stableAddRecording = useCallback((filePath: string, durationMs: number) => {
-    addRecordingRef.current(filePath, durationMs);
-  }, []);
+  const stableAddRecording = useCallback(
+    (filePath: string, durationMs: number) => {
+      addRecordingRef.current(filePath, durationMs);
+    },
+    [],
+  );
 
   const stableSuspend = useCallback(() => suspendRef.current(), []);
   const stableResume = useCallback(() => resumeRef.current(), []);
 
   const {
-    phase, levelHistory, hasPermission, permissionDenied, recordingError,
-    togglePause, suspendForListPlayback, resumeFromListPlayback,
-  } = useVoiceMirror(stableAddRecording, audioContext, recordingService, encoderService, recordingsRepository);
+    phase,
+    levelHistory,
+    hasPermission,
+    permissionDenied,
+    recordingError,
+    togglePause,
+    suspendForListPlayback,
+    resumeFromListPlayback,
+  } = useVoiceMirror(
+    stableAddRecording,
+    audioContext,
+    recordingService,
+    encoderService,
+    recordingsRepository,
+  );
 
   const { recordings, playState, addRecording, togglePlay } = useRecordings(
     { onWillPlay: stableSuspend, onDidStop: stableResume },
@@ -39,7 +64,7 @@ function VoiceMirrorContent() {
   suspendRef.current = suspendForListPlayback;
   resumeRef.current = resumeFromListPlayback;
 
-  const isPaused = phase === 'paused';
+  const isPaused = phase === "paused";
 
   if (permissionDenied) {
     return (
@@ -72,14 +97,25 @@ function VoiceMirrorContent() {
           <AudioLevelMeter history={levelHistory} phase={phase} />
         </View>
         <Text style={styles.hint}>
-          {isPaused ? 'Monitoring paused.' : 'Speak to begin. Silence ends the take.'}
+          {isPaused
+            ? "Monitoring paused."
+            : "Speak to begin. Silence ends the take."}
         </Text>
-        {recordingError && <Text style={styles.recordingError}>{recordingError}</Text>}
+        {recordingError && (
+          <Text style={styles.recordingError}>{recordingError}</Text>
+        )}
         <Pressable
+          testID="toggle-pause-button"
+          accessibilityLabel="toggle-pause-button"
           onPress={togglePause}
-          style={({ pressed }) => [styles.pauseButton, pressed && styles.pauseButtonPressed]}
+          style={({ pressed }) => [
+            styles.pauseButton,
+            pressed && styles.pauseButtonPressed,
+          ]}
         >
-          <Text style={styles.pauseButtonLabel}>{isPaused ? 'Resume' : 'Pause'}</Text>
+          <Text style={styles.pauseButtonLabel}>
+            {isPaused ? "Resume" : "Pause"}
+          </Text>
         </Pressable>
       </View>
 
@@ -89,7 +125,7 @@ function VoiceMirrorContent() {
         recordings={recordings}
         playState={playState}
         onTogglePlay={togglePlay}
-        disabled={phase === 'recording'}
+        disabled={phase === "recording"}
       />
     </SafeAreaView>
   );
@@ -106,63 +142,63 @@ export function VoiceMirrorScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: "#FAFAFA",
   },
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 32,
   },
   monitor: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 32,
     paddingVertical: 32,
     gap: 24,
   },
   meterContainer: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   hint: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   pauseButton: {
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 30,
-    backgroundColor: '#EEEEEE',
+    backgroundColor: "#EEEEEE",
   },
   pauseButtonPressed: {
-    backgroundColor: '#DDDDDD',
+    backgroundColor: "#DDDDDD",
   },
   pauseButtonLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#555555',
+    fontWeight: "600",
+    color: "#555555",
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#DDD',
+    backgroundColor: "#DDD",
   },
   recordingError: {
-    color: '#CC3333',
+    color: "#CC3333",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorBody: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     lineHeight: 22,
   },
 });

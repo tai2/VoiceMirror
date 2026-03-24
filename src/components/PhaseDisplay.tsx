@@ -42,7 +42,7 @@ export function PhaseDisplay({ phase }: Props) {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulse }]} />
-      <Text style={[styles.label, { color }]}>{PHASE_LABEL[phase]}</Text>
+      <Text testID={`phase-${phase}`} accessibilityLabel={`phase-${phase}`} style={[styles.label, { color }]}>{PHASE_LABEL[phase]}</Text>
     </View>
   );
 }
