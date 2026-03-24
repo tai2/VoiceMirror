@@ -53,7 +53,7 @@ function VoiceMirrorContent() {
     recordingsRepository,
   );
 
-  const { recordings, playState, addRecording, togglePlay } = useRecordings(
+  const { recordings, playState, addRecording, deleteRecording, togglePlay } = useRecordings(
     { onWillPlay: stableSuspend, onDidStop: stableResume },
     audioContext,
     recordingsRepository,
@@ -125,6 +125,7 @@ function VoiceMirrorContent() {
         recordings={recordings}
         playState={playState}
         onTogglePlay={togglePlay}
+        onDelete={(r) => deleteRecording(r.id)}
         disabled={phase === "recording"}
       />
     </SafeAreaView>

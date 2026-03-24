@@ -15,6 +15,7 @@ VoiceMirror is a React Native/Expo app that implements a voice mirror: it listen
 - `pnpm lint` to check code styles
   - Don't disable rule unless explicitly asked by developer
 - `pnpm test:ci` to run unit tests
+- `pnpm e2e:ios` and `pnpm e2e:android` to run E2E tests
 
 ## Design and unit testing
 

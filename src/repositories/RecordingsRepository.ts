@@ -29,6 +29,7 @@ export class RealRecordingsRepository implements IRecordingsRepository {
   }
 
   deleteFile(path: string): void {
-    new File('file://' + path).delete();
+    const file = new File('file://' + path);
+    if (file.exists) file.delete();
   }
 }

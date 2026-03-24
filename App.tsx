@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { View, Text, StyleSheet, StatusBar as RNStatusBar } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSyncExternalStore } from "react";
 import { VoiceMirrorScreen } from "./src/screens/VoiceMirrorScreen";
 import { ServicesProvider } from "./src/context/ServicesProvider";
@@ -74,15 +75,20 @@ function E2EBanner() {
 
 export default function App() {
   return (
-    <ServicesProvider services={isE2E ? e2eServices : realServices}>
-      <VoiceMirrorScreen />
-      {isE2E && <E2EBanner />}
-      <StatusBar style="dark" />
-    </ServicesProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <ServicesProvider services={isE2E ? e2eServices : realServices}>
+        <VoiceMirrorScreen />
+        {isE2E && <E2EBanner />}
+        <StatusBar style="dark" />
+      </ServicesProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   e2eBanner: {
     position: "absolute",
     top: RNStatusBar.currentHeight ?? 0,

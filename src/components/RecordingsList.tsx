@@ -7,10 +7,11 @@ type Props = {
   recordings: Recording[];
   playState: PlayState;
   onTogglePlay: (r: Recording) => void;
+  onDelete: (r: Recording) => void;
   disabled: boolean;
 };
 
-export function RecordingsList({ recordings, playState, onTogglePlay, disabled }: Props) {
+export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, disabled }: Props) {
   if (recordings.length === 0) {
     return (
       <View style={styles.empty}>
@@ -28,6 +29,7 @@ export function RecordingsList({ recordings, playState, onTogglePlay, disabled }
           recording={item}
           playState={playState}
           onTogglePlay={() => onTogglePlay(item)}
+          onDelete={() => onDelete(item)}
           disabled={disabled}
         />
       )}

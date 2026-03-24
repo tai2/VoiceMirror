@@ -20,7 +20,25 @@ export async function loadRecordings(): Promise<Recording[]> {
   const file = indexFile();
   if (!file.exists) return [];
   const json = await file.text();
-  return JSON.parse(json) as Recording[];
+  const recordings = JSON.parse(json) as Recording[];
+
+  const valid: Recording[] = [];
+  for (const recording of recordings) {
+    const audioFile = new File(recording.filePath);
+    if (audioFile.exists) {
+      valid.push(recording);
+    } else {
+      console.warn(
+        `[recordings] Removing stale entry: ${recording.filePath} (file not found on disk)`,
+      );
+    }
+  }
+
+  if (valid.length !== recordings.length) {
+    saveRecordings(valid);
+  }
+
+  return valid;
 }
 
 export function saveRecordings(recordings: Recording[]): void {

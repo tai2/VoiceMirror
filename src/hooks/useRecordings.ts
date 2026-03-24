@@ -15,6 +15,7 @@ export type RecordingsState = {
   recordings: Recording[];
   playState: PlayState;
   addRecording: (filePath: string, durationMs: number) => void;
+  deleteRecording: (id: string) => void;
   togglePlay: (recording: Recording) => void;
 };
 
@@ -66,6 +67,21 @@ export function useRecordings(
     repositoryRef.current.save(next);
   }, []);
 
+  const deleteRecording = useCallback((id: string) => {
+    const recording = recordingsRef.current.find(r => r.id === id);
+    if (!recording) return;
+
+    if (playState?.recordingId === id) {
+      stopCurrentPlayer(true);
+    }
+
+    repository.deleteFile(recording.filePath.replace('file://', ''));
+
+    const next = recordingsRef.current.filter(r => r.id !== id);
+    setRecordings(next);
+    repositoryRef.current.save(next);
+  }, [playState, repository, stopCurrentPlayer]);
+
   const togglePlay = useCallback(async (recording: Recording) => {
     if (!audioContext) return;
 
@@ -110,5 +126,5 @@ export function useRecordings(
     source.start(0);
   }, [playState, audioContext, decoderService, stopCurrentPlayer, options]);
 
-  return { recordings, playState, addRecording, togglePlay };
+  return { recordings, playState, addRecording, deleteRecording, togglePlay };
 }

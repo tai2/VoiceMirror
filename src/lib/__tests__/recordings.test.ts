@@ -50,6 +50,7 @@ describe('loadRecordings', () => {
     const recordings = [
       { id: '1', filePath: 'file:///a.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
     ];
+    store['/a.m4a'] = 'audio-data';
     saveRecordings(recordings);
     const loaded = await loadRecordings();
     expect(loaded).toEqual(recordings);
@@ -62,9 +63,55 @@ describe('saveRecordings + loadRecordings', () => {
       { id: '1', filePath: 'file:///a.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
       { id: '2', filePath: 'file:///b.m4a', recordedAt: '2026-01-02T00:00:00.000Z', durationMs: 2000 },
     ];
+    store['/a.m4a'] = 'audio-data';
+    store['/b.m4a'] = 'audio-data';
     saveRecordings(recordings);
     const loaded = await loadRecordings();
     expect(loaded).toEqual(recordings);
+  });
+});
+
+describe('loadRecordings — stale entry cleanup', () => {
+  it('filters out recordings whose files do not exist on disk', async () => {
+    const recordings = [
+      { id: '1', filePath: 'file:///mock/documents/recordings/a.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
+      { id: '2', filePath: 'file:///mock/documents/recordings/b.m4a', recordedAt: '2026-01-02T00:00:00.000Z', durationMs: 2000 },
+    ];
+    saveRecordings(recordings);
+
+    store['/mock/documents/recordings/a.m4a'] = 'audio-data';
+
+    const loaded = await loadRecordings();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].id).toBe('1');
+  });
+
+  it('persists the cleaned-up list when stale entries are found', async () => {
+    const recordings = [
+      { id: '1', filePath: 'file:///mock/documents/recordings/a.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
+    ];
+    saveRecordings(recordings);
+
+    const loaded = await loadRecordings();
+    expect(loaded).toHaveLength(0);
+
+    const reloaded = await loadRecordings();
+    expect(reloaded).toHaveLength(0);
+  });
+
+  it('logs a warning for each stale entry', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const recordings = [
+      { id: '1', filePath: 'file:///mock/documents/recordings/gone.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
+    ];
+    saveRecordings(recordings);
+
+    await loadRecordings();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Removing stale entry'),
+      );
+    warnSpy.mockRestore();
   });
 });
 
