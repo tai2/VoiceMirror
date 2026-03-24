@@ -82,6 +82,12 @@ pnpm run e2e:android
 pnpm run e2e:ios
 ```
 
+To run a specific test case:
+
+```sh
+pnpm run e2e:ios -- --mochaOpts.grep "partial swipe reveals delete button"
+```
+
 ## Register a device (iOS internal distribution)
 
 ```sh

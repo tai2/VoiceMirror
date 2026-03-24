@@ -168,3 +168,63 @@ describe('useRecordings — source node onEnded', () => {
     expect(onDidStop).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('useRecordings — deleteRecording', () => {
+  it('removes the recording from the list', async () => {
+    const r1 = makeRecording({ id: '1' });
+    const r2 = makeRecording({ id: '2', filePath: 'file:///tmp/recording_2.m4a' });
+    const { result } = setup([r1, r2]);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(2));
+
+    act(() => { result.current.deleteRecording('1'); });
+
+    expect(result.current.recordings).toHaveLength(1);
+    expect(result.current.recordings[0].id).toBe('2');
+  });
+
+  it('calls repository.deleteFile with the path (file:// stripped)', async () => {
+    const r = makeRecording({ id: '1', filePath: 'file:///tmp/recording_1.m4a' });
+    const { result, repository } = setup([r]);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    act(() => { result.current.deleteRecording('1'); });
+
+    expect(repository.deleteFile).toHaveBeenCalledWith('/tmp/recording_1.m4a');
+  });
+
+  it('calls repository.save with the updated list', async () => {
+    const r = makeRecording({ id: '1' });
+    const { result, repository } = setup([r]);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    act(() => { result.current.deleteRecording('1'); });
+
+    const lastSaveCall = repository.save.mock.calls[repository.save.mock.calls.length - 1];
+    expect(lastSaveCall[0]).toHaveLength(0);
+  });
+
+  it('stops playback if the deleted recording is currently playing', async () => {
+    const r = makeRecording({ id: '1' });
+    const { result, onDidStop } = setup([r]);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    await act(async () => { result.current.togglePlay(r); });
+    expect(result.current.playState?.recordingId).toBe('1');
+
+    act(() => { result.current.deleteRecording('1'); });
+
+    expect(result.current.playState).toBeNull();
+    expect(onDidStop).toHaveBeenCalled();
+  });
+
+  it('is a no-op for a non-existent id', async () => {
+    const r = makeRecording({ id: '1' });
+    const { result, repository } = setup([r]);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    act(() => { result.current.deleteRecording('nonexistent'); });
+
+    expect(result.current.recordings).toHaveLength(1);
+    expect(repository.deleteFile).not.toHaveBeenCalled();
+  });
+});
