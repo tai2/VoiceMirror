@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AudioContext } from 'react-native-audio-api';
 import {
-  VOICE_THRESHOLD_DB,
-  SILENCE_THRESHOLD_DB,
-  VOICE_ONSET_MS,
-  SILENCE_DURATION_MS,
-  MIN_RECORDING_MS,
   LEVEL_HISTORY_SIZE,
   DB_FLOOR,
   DB_CEIL,
@@ -14,6 +9,7 @@ import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types
 import type { IAudioRecordingService, IAudioRecorder } from '../services/AudioRecordingService';
 import type { IAudioEncoderService } from '../services/AudioEncoderService';
 import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
+import type { DetectionSettings } from '../types/settings';
 
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
@@ -25,6 +21,7 @@ export function useVoiceMirror(
   recordingService: IAudioRecordingService,
   encoderService: IAudioEncoderService,
   repository: IRecordingsRepository,
+  settings: DetectionSettings,
 ): VoiceMirrorState {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hasPermission, setHasPermission] = useState(false);
@@ -51,6 +48,8 @@ export function useVoiceMirror(
   const encoderFailedRef = useRef(false);
   const wasUserPausedRef = useRef(false);
   const startMonitoringRef = useRef<() => Promise<void>>(async () => {});
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   useEffect(() => {
     if (!audioContext) return;
@@ -112,13 +111,14 @@ export function useVoiceMirror(
 
   function tickStateMachine(db: number, totalFrames: number, sampleRate: number) {
     const now = Date.now();
+    const s = settingsRef.current;
 
     if (phaseRef.current === 'idle') {
-      if (db > VOICE_THRESHOLD_DB) {
+      if (db > s.voiceThresholdDb) {
         if (voiceStartTimeRef.current === null) {
           voiceStartTimeRef.current = now;
           voiceStartFrameRef.current = totalFrames;
-        } else if (now - voiceStartTimeRef.current >= VOICE_ONSET_MS) {
+        } else if (now - voiceStartTimeRef.current >= s.voiceOnsetMs) {
           silenceStartTimeRef.current = null;
           phaseRef.current = 'recording';
           setPhase('recording');
@@ -130,16 +130,16 @@ export function useVoiceMirror(
     } else if (phaseRef.current === 'recording') {
       const speechMs = ((totalFrames - voiceStartFrameRef.current) / sampleRate) * 1000;
 
-      if (db < SILENCE_THRESHOLD_DB && speechMs >= MIN_RECORDING_MS) {
+      if (db < s.silenceThresholdDb && speechMs >= s.minRecordingMs) {
         if (silenceStartTimeRef.current === null) {
           silenceStartTimeRef.current = now;
-        } else if (now - silenceStartTimeRef.current >= SILENCE_DURATION_MS) {
+        } else if (now - silenceStartTimeRef.current >= s.silenceDurationMs) {
           silenceStartTimeRef.current = null;
           phaseRef.current = 'playing';
           setPhase('playing');
           void stopAndPlay();
         }
-      } else if (db >= SILENCE_THRESHOLD_DB) {
+      } else if (db >= s.silenceThresholdDb) {
         silenceStartTimeRef.current = null;
       }
     }

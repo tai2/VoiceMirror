@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from "react-native";
 import { useRef, useCallback } from "react";
+import { useRouter } from "expo-router";
 import { useVoiceMirror } from "../hooks/useVoiceMirror";
 import { useRecordings } from "../hooks/useRecordings";
 import { AudioLevelMeter } from "../components/AudioLevelMeter";
@@ -10,6 +11,7 @@ import {
   useAudioContext,
 } from "../context/AudioContextProvider";
 import { useServices } from "../context/ServicesProvider";
+import { useSettings } from "../context/SettingsProvider";
 
 function VoiceMirrorContent() {
   const audioContext = useAudioContext();
@@ -19,6 +21,8 @@ function VoiceMirrorContent() {
     decoderService,
     recordingsRepository,
   } = useServices();
+  const { settings } = useSettings();
+  const router = useRouter();
 
   const addRecordingRef = useRef<
     (filePath: string, durationMs: number) => void
@@ -51,6 +55,7 @@ function VoiceMirrorContent() {
     recordingService,
     encoderService,
     recordingsRepository,
+    settings,
   );
 
   const { recordings, playState, addRecording, deleteRecording, togglePlay } = useRecordings(
@@ -91,6 +96,18 @@ function VoiceMirrorContent() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <View style={styles.topBar}>
+        <View style={styles.topBarSpacer} />
+        <Pressable
+          onPress={() => router.push("/settings")}
+          style={({ pressed }) => [
+            styles.settingsButton,
+            pressed && styles.settingsButtonPressed,
+          ]}
+        >
+          <Text style={styles.settingsIcon}>&#x2699;</Text>
+        </Pressable>
+      </View>
       <View style={styles.monitor}>
         <PhaseDisplay phase={phase} />
         <View style={styles.meterContainer}>
@@ -144,6 +161,25 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#FAFAFA",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  topBarSpacer: {
+    flex: 1,
+  },
+  settingsButton: {
+    padding: 8,
+  },
+  settingsButtonPressed: {
+    opacity: 0.5,
+  },
+  settingsIcon: {
+    fontSize: 24,
+    color: "#888",
   },
   center: {
     flex: 1,

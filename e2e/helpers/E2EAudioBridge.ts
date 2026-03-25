@@ -1,10 +1,9 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
-import {
-  SAMPLE_RATE,
-  VOICE_THRESHOLD_DB,
-  SILENCE_THRESHOLD_DB,
-} from "../../src/constants/audio";
+import { SAMPLE_RATE } from "../../src/constants/audio";
+import { DEFAULT_SETTINGS } from "../../src/types/settings";
+
+const { voiceThresholdDb: VOICE_THRESHOLD_DB, silenceThresholdDb: SILENCE_THRESHOLD_DB } = DEFAULT_SETTINGS;
 
 const CHUNK_FRAMES = 4096;
 const CHUNK_DURATION_MS = (CHUNK_FRAMES / SAMPLE_RATE) * 1000;
