@@ -4,14 +4,16 @@ import { StubAudioRecordingService } from '../../__tests__/stubs/stubAudioRecord
 import { StubAudioEncoderService } from '../../__tests__/stubs/stubAudioEncoderService';
 import { StubRecordingsRepository } from '../../__tests__/stubs/stubRecordingsRepository';
 import { makeStubAudioContext } from '../../__tests__/stubs/stubAudioContext';
-import {
-  VOICE_THRESHOLD_DB,
-  SILENCE_THRESHOLD_DB,
-  VOICE_ONSET_MS,
-  SILENCE_DURATION_MS,
-  MIN_RECORDING_MS,
-  LEVEL_HISTORY_SIZE,
-} from '../../constants/audio';
+import { LEVEL_HISTORY_SIZE } from '../../constants/audio';
+import { DEFAULT_SETTINGS } from '../../types/settings';
+
+const {
+  voiceThresholdDb: VOICE_THRESHOLD_DB,
+  silenceThresholdDb: SILENCE_THRESHOLD_DB,
+  voiceOnsetMs: VOICE_ONSET_MS,
+  silenceDurationMs: SILENCE_DURATION_MS,
+  minRecordingMs: MIN_RECORDING_MS,
+} = DEFAULT_SETTINGS;
 
 function makeLoudChunk(durationMs = 100, sampleRate = 44100): Float32Array {
   const numFrames = Math.round((durationMs / 1000) * sampleRate);
@@ -33,7 +35,7 @@ function setup() {
   const audioContext = makeStubAudioContext();
 
   const { result, unmount } = renderHook(() =>
-    useVoiceMirror(onRecordingComplete, audioContext, recordingService, encoderService, repository),
+    useVoiceMirror(onRecordingComplete, audioContext, recordingService, encoderService, repository, DEFAULT_SETTINGS),
   );
 
   return { result, unmount, onRecordingComplete, recordingService, encoderService, repository, audioContext };
@@ -94,7 +96,7 @@ describe('useVoiceMirror — permissions', () => {
     const recordingService = new StubAudioRecordingService();
     recordingService.requestRecordingPermissions.mockResolvedValue('Denied');
     const { result } = renderHook(() =>
-      useVoiceMirror(jest.fn(), makeStubAudioContext(), recordingService, new StubAudioEncoderService(), new StubRecordingsRepository()),
+      useVoiceMirror(jest.fn(), makeStubAudioContext(), recordingService, new StubAudioEncoderService(), new StubRecordingsRepository(), DEFAULT_SETTINGS),
     );
     await waitFor(() => expect(result.current.permissionDenied).toBe(true));
     expect(result.current.hasPermission).toBe(false);

@@ -1,17 +1,19 @@
 import { StatusBar } from "expo-status-bar";
 import { View, Text, StyleSheet, StatusBar as RNStatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Stack } from "expo-router";
 import { useSyncExternalStore } from "react";
-import { VoiceMirrorScreen } from "./src/screens/VoiceMirrorScreen";
-import { ServicesProvider } from "./src/context/ServicesProvider";
-import { RealAudioRecordingService } from "./src/services/AudioRecordingService";
-import { RealAudioEncoderService } from "./src/services/AudioEncoderService";
-import { RealAudioDecoderService } from "./src/services/AudioDecoderService";
-import { RealRecordingsRepository } from "./src/repositories/RecordingsRepository";
+import { ServicesProvider } from "../src/context/ServicesProvider";
+import { SettingsProvider } from "../src/context/SettingsProvider";
+import { RealAudioRecordingService } from "../src/services/AudioRecordingService";
+import { RealAudioEncoderService } from "../src/services/AudioEncoderService";
+import { RealAudioDecoderService } from "../src/services/AudioDecoderService";
+import { RealRecordingsRepository } from "../src/repositories/RecordingsRepository";
+import { RealSettingsRepository } from "../src/repositories/SettingsRepository";
 import {
   E2EAudioRecordingService,
   type E2EConnectionStatus,
-} from "./src/services/E2EAudioRecordingService";
+} from "../src/services/E2EAudioRecordingService";
 
 const isE2E = process.env.EXPO_PUBLIC_E2E === "1";
 
@@ -28,6 +30,8 @@ const e2eServices = {
   ...realServices,
   recordingService: e2eRecordingService,
 };
+
+const settingsRepository = new RealSettingsRepository();
 
 const CONNECTION_STATUS_LABEL: Record<E2EConnectionStatus, string> = {
   disconnected: "WS: Disconnected",
@@ -73,13 +77,24 @@ function E2EBanner() {
   );
 }
 
-export default function App() {
+export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <ServicesProvider services={isE2E ? e2eServices : realServices}>
-        <VoiceMirrorScreen />
-        {isE2E && <E2EBanner />}
-        <StatusBar style="dark" />
+        <SettingsProvider repository={settingsRepository}>
+          <Stack>
+            <Stack.Screen
+              name="index"
+              options={{ title: "VoiceMirror", headerShown: false }}
+            />
+            <Stack.Screen
+              name="settings"
+              options={{ title: "Settings", presentation: "card" }}
+            />
+          </Stack>
+          {isE2E && <E2EBanner />}
+          <StatusBar style="dark" />
+        </SettingsProvider>
       </ServicesProvider>
     </GestureHandlerRootView>
   );

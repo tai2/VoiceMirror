@@ -1,9 +1,7 @@
 import { E2EAudioBridge } from "../helpers/E2EAudioBridge";
-import {
-  VOICE_ONSET_MS,
-  MIN_RECORDING_MS,
-  SILENCE_DURATION_MS,
-} from "../../src/constants/audio";
+import { DEFAULT_SETTINGS } from "../../src/types/settings";
+
+const { voiceOnsetMs: VOICE_ONSET_MS, minRecordingMs: MIN_RECORDING_MS, silenceDurationMs: SILENCE_DURATION_MS } = DEFAULT_SETTINGS;
 
 let bridge: E2EAudioBridge;
 
