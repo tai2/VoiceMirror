@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet, Animated, useWindowDimensions } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Recording } from '../lib/recordings';
 import type { PlayState } from '../hooks/useRecordings';
 
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export function RecordingItem({ recording, playState, onTogglePlay, onDelete, disabled }: Props) {
+  const { t } = useTranslation();
   const isPlaying = playState?.recordingId === recording.id && playState.isPlaying;
   const swipeableRef = useRef<Swipeable>(null);
   const { width: screenWidth } = useWindowDimensions();
@@ -70,7 +72,7 @@ export function RecordingItem({ recording, playState, onTogglePlay, onDelete, di
           style={styles.deleteButton}
         >
           <Text style={styles.deleteIcon}>🗑</Text>
-          <Text style={styles.deleteLabel}>Delete</Text>
+          <Text style={styles.deleteLabel}>{t('recordings.delete')}</Text>
         </Pressable>
       </Animated.View>
     );

@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, SafeAreaView, Pressable } from "react-native";
 import { useRef, useCallback } from "react";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useVoiceMirror } from "../hooks/useVoiceMirror";
 import { useRecordings } from "../hooks/useRecordings";
 import { AudioLevelMeter } from "../components/AudioLevelMeter";
@@ -14,6 +15,7 @@ import { useServices } from "../context/ServicesProvider";
 import { useSettings } from "../context/SettingsProvider";
 
 function VoiceMirrorContent() {
+  const { t } = useTranslation();
   const audioContext = useAudioContext();
   const {
     recordingService,
@@ -75,9 +77,9 @@ function VoiceMirrorContent() {
     return (
       <SafeAreaView style={styles.root}>
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>Microphone access required</Text>
+          <Text style={styles.errorTitle}>{t('main.error_title')}</Text>
           <Text style={styles.errorBody}>
-            Go to Settings → VoiceMirror → Microphone and allow access.
+            {t('main.error_body')}
           </Text>
         </View>
       </SafeAreaView>
@@ -88,7 +90,7 @@ function VoiceMirrorContent() {
     return (
       <SafeAreaView style={styles.root}>
         <View style={styles.center}>
-          <Text style={styles.hint}>Requesting microphone access…</Text>
+          <Text style={styles.hint}>{t('main.hint_requesting')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -114,12 +116,10 @@ function VoiceMirrorContent() {
           <AudioLevelMeter history={levelHistory} phase={phase} />
         </View>
         <Text style={styles.hint}>
-          {isPaused
-            ? "Monitoring paused."
-            : "Speak to begin. Silence ends the take."}
+          {isPaused ? t('main.hint_paused') : t('main.hint_listening')}
         </Text>
         {recordingError && (
-          <Text style={styles.recordingError}>{recordingError}</Text>
+          <Text style={styles.recordingError}>{t(`main.${recordingError}`)}</Text>
         )}
         <Pressable
           testID="toggle-pause-button"
@@ -131,7 +131,7 @@ function VoiceMirrorContent() {
           ]}
         >
           <Text style={styles.pauseButtonLabel}>
-            {isPaused ? "Resume" : "Pause"}
+            {isPaused ? t('main.button_resume') : t('main.button_pause')}
           </Text>
         </Pressable>
       </View>

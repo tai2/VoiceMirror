@@ -1,0 +1,5 @@
+{
+  "ios": {
+    "NSMicrophoneUsageDescription": "VoiceMirrorがあなたの声を録音し、すぐに再生します。"
+  }
+}

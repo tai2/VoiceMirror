@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { Phase } from '../hooks/types';
 
-const PHASE_LABEL: Record<Phase, string> = {
-  idle: 'Listening…',
-  recording: 'Recording',
-  playing: 'Playing back',
-  paused: 'Paused',
+const PHASE_I18N_KEY: Record<Phase, string> = {
+  idle: 'phase.idle',
+  recording: 'phase.recording',
+  playing: 'phase.playing',
+  paused: 'phase.paused',
 };
 
 const PHASE_COLOR: Record<Phase, string> = {
@@ -19,6 +20,7 @@ const PHASE_COLOR: Record<Phase, string> = {
 type Props = { phase: Phase };
 
 export function PhaseDisplay({ phase }: Props) {
+  const { t } = useTranslation();
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function PhaseDisplay({ phase }: Props) {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulse }]} />
-      <Text testID={`phase-${phase}`} accessibilityLabel={`phase-${phase}`} style={[styles.label, { color }]}>{PHASE_LABEL[phase]}</Text>
+      <Text testID={`phase-${phase}`} accessibilityLabel={`phase-${phase}`} style={[styles.label, { color }]}>{t(PHASE_I18N_KEY[phase])}</Text>
     </View>
   );
 }

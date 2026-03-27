@@ -1,0 +1,31 @@
+{
+  "main.error_title": "マイクへのアクセスが必要です",
+  "main.error_body": "設定 → VoiceMirror → マイクからアクセスを許可してください。",
+  "main.hint_requesting": "マイクへのアクセスをリクエスト中…",
+  "main.hint_paused": "モニタリング一時停止中",
+  "main.hint_listening": "話しかけてください。沈黙で終了します。",
+  "main.button_resume": "再開",
+  "main.button_pause": "一時停止",
+  "main.recording_failed": "録音の保存に失敗しました。",
+
+  "phase.idle": "待機中…",
+  "phase.recording": "録音中",
+  "phase.playing": "再生中",
+  "phase.paused": "一時停止",
+
+  "recordings.empty": "録音はまだありません",
+  "recordings.delete": "削除",
+
+  "settings.title": "設定",
+  "settings.voice_threshold_label": "音声閾値",
+  "settings.voice_threshold_description": "音声検出を開始するために超える必要がある音量レベル（dB）。低い値は小さな声に敏感になり、高い値はより大きな入力を必要とします。",
+  "settings.voice_onset_label": "音声開始時間",
+  "settings.voice_onset_description": "録音が開始されるまでに音声閾値を超え続ける必要がある時間（ms）。短い値は反応が早くなりますが短い雑音で誤検出する可能性があります。",
+  "settings.silence_threshold_label": "沈黙閾値",
+  "settings.silence_threshold_description": "沈黙検出が始まる音量レベル（dB）。音声閾値より低く設定してください。低い値は背景ノイズをより許容します。",
+  "settings.silence_duration_label": "沈黙時間",
+  "settings.silence_duration_description": "録音が終了するまでに沈黙が続く必要がある時間（ms）。長い値は自然なポーズを許容し、短い値は録音を早く終了します。",
+  "settings.min_recording_label": "最小録音時間",
+  "settings.min_recording_description": "沈黙で録音を終了する前に必要な最小の音声時間（ms）。短すぎる偶発的な録音を防ぎます。",
+  "settings.default_prefix": "デフォルト:"
+}

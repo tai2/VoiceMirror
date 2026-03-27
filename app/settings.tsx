@@ -1,13 +1,14 @@
 import { View, Text, StyleSheet, ScrollView, SafeAreaView } from "react-native";
 import Slider from "@react-native-community/slider";
+import { useTranslation } from "react-i18next";
 import { useSettings } from "../src/context/SettingsProvider";
 import type { DetectionSettings } from "../src/types/settings";
 import { DEFAULT_SETTINGS } from "../src/types/settings";
 
 type SliderConfig = {
   key: keyof DetectionSettings;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   min: number;
   max: number;
   step: number;
@@ -17,9 +18,8 @@ type SliderConfig = {
 const SLIDERS: SliderConfig[] = [
   {
     key: "voiceThresholdDb",
-    label: "Voice Threshold",
-    description:
-      "Audio level (in dB) that must be exceeded to begin voice onset detection. Lower values make detection more sensitive to quiet speech; higher values require louder input.",
+    labelKey: "settings.voice_threshold_label",
+    descriptionKey: "settings.voice_threshold_description",
     min: -60,
     max: -10,
     step: 1,
@@ -27,9 +27,8 @@ const SLIDERS: SliderConfig[] = [
   },
   {
     key: "voiceOnsetMs",
-    label: "Voice Onset Duration",
-    description:
-      "How long (in ms) the audio must stay above the voice threshold before recording starts. Shorter values react faster but may trigger on brief noises; longer values are more conservative.",
+    labelKey: "settings.voice_onset_label",
+    descriptionKey: "settings.voice_onset_description",
     min: 50,
     max: 1000,
     step: 50,
@@ -37,9 +36,8 @@ const SLIDERS: SliderConfig[] = [
   },
   {
     key: "silenceThresholdDb",
-    label: "Silence Threshold",
-    description:
-      "Audio level (in dB) below which silence detection begins. Should be lower than the voice threshold. Lower values tolerate more background noise before ending a recording.",
+    labelKey: "settings.silence_threshold_label",
+    descriptionKey: "settings.silence_threshold_description",
     min: -70,
     max: -10,
     step: 1,
@@ -47,9 +45,8 @@ const SLIDERS: SliderConfig[] = [
   },
   {
     key: "silenceDurationMs",
-    label: "Silence Duration",
-    description:
-      "How long (in ms) silence must persist before the recording ends. Longer values allow natural pauses in speech without cutting off; shorter values end recordings faster.",
+    labelKey: "settings.silence_duration_label",
+    descriptionKey: "settings.silence_duration_description",
     min: 300,
     max: 5000,
     step: 100,
@@ -57,9 +54,8 @@ const SLIDERS: SliderConfig[] = [
   },
   {
     key: "minRecordingMs",
-    label: "Min Recording Duration",
-    description:
-      "Minimum amount of speech (in ms) that must be captured before silence can end the recording. Prevents very short accidental recordings.",
+    labelKey: "settings.min_recording_label",
+    descriptionKey: "settings.min_recording_description",
     min: 100,
     max: 3000,
     step: 100,
@@ -68,18 +64,19 @@ const SLIDERS: SliderConfig[] = [
 ];
 
 function SettingSlider({ config }: { config: SliderConfig }) {
+  const { t } = useTranslation();
   const { settings, updateSetting } = useSettings();
   const value = settings[config.key];
 
   return (
     <View style={styles.sliderCard}>
       <View style={styles.sliderHeader}>
-        <Text style={styles.sliderLabel}>{config.label}</Text>
+        <Text style={styles.sliderLabel}>{t(config.labelKey)}</Text>
         <Text style={styles.sliderValue}>
           {value} {config.unit}
         </Text>
       </View>
-      <Text style={styles.sliderDescription}>{config.description}</Text>
+      <Text style={styles.sliderDescription}>{t(config.descriptionKey)}</Text>
       <Slider
         minimumValue={config.min}
         maximumValue={config.max}
@@ -94,7 +91,7 @@ function SettingSlider({ config }: { config: SliderConfig }) {
           {config.min} {config.unit}
         </Text>
         <Text style={styles.defaultLabel}>
-          default: {DEFAULT_SETTINGS[config.key]} {config.unit}
+          {t("settings.default_prefix")} {DEFAULT_SETTINGS[config.key]} {config.unit}
         </Text>
         <Text style={styles.rangeLabel}>
           {config.max} {config.unit}

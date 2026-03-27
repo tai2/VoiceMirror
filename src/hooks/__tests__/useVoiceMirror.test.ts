@@ -290,7 +290,7 @@ describe('useVoiceMirror — recording → playing', () => {
     });
 
     await waitFor(() => expect(result.current.recordingError).not.toBeNull());
-    expect(result.current.recordingError).toBe('Recording failed to save.');
+    expect(result.current.recordingError).toBe('recording_failed');
   });
 });
 

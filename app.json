@@ -12,11 +12,18 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "locales": {
+      "en": "./languages/en.json",
+      "ja": "./languages/ja.json"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "net.tai2.voicemirror",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
       }
     },
     "android": {
@@ -44,6 +51,12 @@
         {
           "iosMicrophonePermission": "VoiceMirror records your voice so you can immediately hear yourself back.",
           "androidPermissions": ["android.permission.RECORD_AUDIO"]
+        }
+      ],
+      [
+        "expo-localization",
+        {
+          "supportedLocales": ["en", "ja"]
         }
       ]
     ]
