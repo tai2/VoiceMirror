@@ -1,0 +1,31 @@
+{
+  "main.error_title": "Microphone access required",
+  "main.error_body": "Go to Settings → VoiceMirror → Microphone and allow access.",
+  "main.hint_requesting": "Requesting microphone access…",
+  "main.hint_paused": "Monitoring paused.",
+  "main.hint_listening": "Speak to begin. Silence ends the take.",
+  "main.button_resume": "Resume",
+  "main.button_pause": "Pause",
+  "main.recording_failed": "Recording failed to save.",
+
+  "phase.idle": "Listening…",
+  "phase.recording": "Recording",
+  "phase.playing": "Playing back",
+  "phase.paused": "Paused",
+
+  "recordings.empty": "No recordings yet",
+  "recordings.delete": "Delete",
+
+  "settings.title": "Settings",
+  "settings.voice_threshold_label": "Voice Threshold",
+  "settings.voice_threshold_description": "Audio level (in dB) that must be exceeded to begin voice onset detection. Lower values make detection more sensitive to quiet speech; higher values require louder input.",
+  "settings.voice_onset_label": "Voice Onset Duration",
+  "settings.voice_onset_description": "How long (in ms) the audio must stay above the voice threshold before recording starts. Shorter values react faster but may trigger on brief noises; longer values are more conservative.",
+  "settings.silence_threshold_label": "Silence Threshold",
+  "settings.silence_threshold_description": "Audio level (in dB) below which silence detection begins. Should be lower than the voice threshold. Lower values tolerate more background noise before ending a recording.",
+  "settings.silence_duration_label": "Silence Duration",
+  "settings.silence_duration_description": "How long (in ms) silence must persist before the recording ends. Longer values allow natural pauses in speech without cutting off; shorter values end recordings faster.",
+  "settings.min_recording_label": "Min Recording Duration",
+  "settings.min_recording_description": "Minimum amount of speech (in ms) that must be captured before silence can end the recording. Prevents very short accidental recordings.",
+  "settings.default_prefix": "default:"
+}

@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, StatusBar as RNStatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { useSyncExternalStore } from "react";
+import { I18nProvider } from "../src/context/I18nProvider";
+import { useTranslation } from "react-i18next";
 import { ServicesProvider } from "../src/context/ServicesProvider";
 import { SettingsProvider } from "../src/context/SettingsProvider";
 import { RealAudioRecordingService } from "../src/services/AudioRecordingService";
@@ -77,25 +79,34 @@ function E2EBanner() {
   );
 }
 
+function RootStack() {
+  const { t } = useTranslation();
+  return (
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{ title: "VoiceMirror", headerShown: false }}
+      />
+      <Stack.Screen
+        name="settings"
+        options={{ title: t("settings.title"), presentation: "card" }}
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
-      <ServicesProvider services={isE2E ? e2eServices : realServices}>
-        <SettingsProvider repository={settingsRepository}>
-          <Stack>
-            <Stack.Screen
-              name="index"
-              options={{ title: "VoiceMirror", headerShown: false }}
-            />
-            <Stack.Screen
-              name="settings"
-              options={{ title: "Settings", presentation: "card" }}
-            />
-          </Stack>
-          {isE2E && <E2EBanner />}
-          <StatusBar style="dark" />
-        </SettingsProvider>
-      </ServicesProvider>
+      <I18nProvider>
+        <ServicesProvider services={isE2E ? e2eServices : realServices}>
+          <SettingsProvider repository={settingsRepository}>
+            <RootStack />
+            {isE2E && <E2EBanner />}
+            <StatusBar style="dark" />
+          </SettingsProvider>
+        </ServicesProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }

@@ -22,6 +22,8 @@
       "WebSearch",
       "Bash(pod install:*)",
       "Bash(npx expo-modules-autolinking:*)",
+      "WebFetch(domain:react.i18next.com)",
+      "WebFetch(domain:www.i18next.com)",
       "Bash(./gradlew *)",
       "Bash(python3 -m json.tool)"
     ]

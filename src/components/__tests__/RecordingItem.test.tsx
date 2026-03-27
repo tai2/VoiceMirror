@@ -1,4 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { I18nextProvider } from 'react-i18next';
+import { setupTestI18n } from '../../__tests__/helpers/setupI18n';
 import { RecordingItem } from '../RecordingItem';
 import type { Recording } from '../../lib/recordings';
 
@@ -9,6 +11,8 @@ jest.mock('react-native-gesture-handler', () => {
     GestureHandlerRootView: RN.View,
   };
 });
+
+const i18n = setupTestI18n();
 
 const makeRecording = (overrides?: Partial<Recording>): Recording => ({
   id: '1',
@@ -27,7 +31,11 @@ function renderItem(props: Partial<React.ComponentProps<typeof RecordingItem>> =
     disabled: false,
     ...props,
   };
-  return render(<RecordingItem {...defaultProps} />);
+  return render(
+    <I18nextProvider i18n={i18n}>
+      <RecordingItem {...defaultProps} />
+    </I18nextProvider>,
+  );
 }
 
 describe('RecordingItem', () => {

@@ -1,4 +1,5 @@
 import { FlatList, View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { Recording } from '../lib/recordings';
 import type { PlayState } from '../hooks/useRecordings';
 import { RecordingItem } from './RecordingItem';
@@ -12,10 +13,12 @@ type Props = {
 };
 
 export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, disabled }: Props) {
+  const { t } = useTranslation();
+
   if (recordings.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>No recordings yet</Text>
+        <Text style={styles.emptyText}>{t('recordings.empty')}</Text>
       </View>
     );
   }

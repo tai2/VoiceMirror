@@ -238,7 +238,7 @@ export function useVoiceMirror(
 
     if (filePath && durationMs === 0) {
       repository.deleteFile(filePath);
-      setRecordingError('Recording failed to save.');
+      setRecordingError('recording_failed');
     }
 
     if (filePath && durationMs > 0) {
