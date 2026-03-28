@@ -15,7 +15,7 @@ function makeRecording(overrides?: Partial<Recording>): Recording {
   };
 }
 
-function setup(initialRecordings: Recording[] = []) {
+function setup(initialRecordings: Recording[] = [], maxRecordings = 0) {
   const repository = new StubRecordingsRepository();
   repository.seed(initialRecordings);
   const decoderService = new StubAudioDecoderService();
@@ -24,7 +24,7 @@ function setup(initialRecordings: Recording[] = []) {
   const onDidStop = jest.fn().mockResolvedValue(undefined);
 
   const { result } = renderHook(() =>
-    useRecordings({ onWillPlay, onDidStop }, audioContext, repository, decoderService),
+    useRecordings({ onWillPlay, onDidStop }, audioContext, repository, decoderService, maxRecordings),
   );
 
   return { result, repository, decoderService, audioContext, onWillPlay, onDidStop };
@@ -226,5 +226,41 @@ describe('useRecordings — deleteRecording', () => {
 
     expect(result.current.recordings).toHaveLength(1);
     expect(repository.deleteFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('useRecordings — FIFO cap enforcement', () => {
+  it('trims oldest recordings when adding exceeds maxRecordings', async () => {
+    const r1 = makeRecording({ id: '1' });
+    const r2 = makeRecording({ id: '2', filePath: 'file:///tmp/recording_2.m4a' });
+    const { result } = setup([r1, r2], 2);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(2));
+
+    act(() => { result.current.addRecording('/tmp/new.m4a', 1000); });
+
+    expect(result.current.recordings).toHaveLength(2);
+    expect(result.current.recordings[0].filePath).toBe('file:///tmp/new.m4a');
+    expect(result.current.recordings[1].id).toBe('1');
+  });
+
+  it('deletes the M4A files for evicted recordings', async () => {
+    const r1 = makeRecording({ id: '1', filePath: 'file:///tmp/r1.m4a' });
+    const r2 = makeRecording({ id: '2', filePath: 'file:///tmp/r2.m4a' });
+    const { result, repository } = setup([r1, r2], 2);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(2));
+
+    act(() => { result.current.addRecording('/tmp/new.m4a', 1000); });
+
+    expect(repository.deleteFile).toHaveBeenCalledWith('/tmp/r2.m4a');
+  });
+
+  it('does not trim when maxRecordings is 0 (unlimited)', async () => {
+    const r1 = makeRecording({ id: '1' });
+    const { result } = setup([r1], 0);
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    act(() => { result.current.addRecording('/tmp/new.m4a', 1000); });
+
+    expect(result.current.recordings).toHaveLength(2);
   });
 });

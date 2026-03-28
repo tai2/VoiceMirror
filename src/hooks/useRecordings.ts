@@ -24,6 +24,7 @@ export function useRecordings(
   audioContext: AudioContext | null,
   repository: IRecordingsRepository,
   decoderService: IAudioDecoderService,
+  maxRecordings: number,
 ): RecordingsState {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [playState, setPlayState] = useState<PlayState>(null);
@@ -31,6 +32,8 @@ export function useRecordings(
   recordingsRef.current = recordings;
   const repositoryRef = useRef(repository);
   repositoryRef.current = repository;
+  const maxRecordingsRef = useRef(maxRecordings);
+  maxRecordingsRef.current = maxRecordings;
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isDecodingRef = useRef(false);
 
@@ -62,7 +65,17 @@ export function useRecordings(
       recordedAt: new Date().toISOString(),
       durationMs,
     };
-    const next = [entry, ...recordingsRef.current];
+    let next = [entry, ...recordingsRef.current];
+
+    const cap = maxRecordingsRef.current;
+    if (cap > 0 && next.length > cap) {
+      const excess = next.slice(cap);
+      for (const r of excess) {
+        repositoryRef.current.deleteFile(r.filePath.replace('file://', ''));
+      }
+      next = next.slice(0, cap);
+    }
+
     setRecordings(next);
     repositoryRef.current.save(next);
   }, []);

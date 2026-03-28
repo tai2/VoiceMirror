@@ -65,6 +65,7 @@ function VoiceMirrorContent() {
     audioContext,
     recordingsRepository,
     decoderService,
+    settings.maxRecordings,
   );
 
   addRecordingRef.current = addRecording;

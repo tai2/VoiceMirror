@@ -2,11 +2,11 @@ import { View, Text, StyleSheet, ScrollView, SafeAreaView } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../src/context/SettingsProvider";
-import type { DetectionSettings } from "../src/types/settings";
+import type { AppSettings } from "../src/types/settings";
 import { DEFAULT_SETTINGS } from "../src/types/settings";
 
 type SliderConfig = {
-  key: keyof DetectionSettings;
+  key: keyof AppSettings;
   labelKey: string;
   descriptionKey: string;
   min: number;
@@ -61,6 +61,15 @@ const SLIDERS: SliderConfig[] = [
     step: 100,
     unit: "ms",
   },
+  {
+    key: "maxRecordings",
+    labelKey: "settings.max_recordings_label",
+    descriptionKey: "settings.max_recordings_description",
+    min: 0,
+    max: 200,
+    step: 5,
+    unit: "",
+  },
 ];
 
 function SettingSlider({ config }: { config: SliderConfig }) {
@@ -68,13 +77,15 @@ function SettingSlider({ config }: { config: SliderConfig }) {
   const { settings, updateSetting } = useSettings();
   const value = settings[config.key];
 
+  const displayValue = config.key === 'maxRecordings' && value === 0
+    ? t('settings.max_recordings_unlimited')
+    : `${value} ${config.unit}`;
+
   return (
     <View style={styles.sliderCard}>
       <View style={styles.sliderHeader}>
         <Text style={styles.sliderLabel}>{t(config.labelKey)}</Text>
-        <Text style={styles.sliderValue}>
-          {value} {config.unit}
-        </Text>
+        <Text style={styles.sliderValue}>{displayValue}</Text>
       </View>
       <Text style={styles.sliderDescription}>{t(config.descriptionKey)}</Text>
       <Slider
