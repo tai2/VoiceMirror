@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { type DetectionSettings, DEFAULT_SETTINGS } from '../types/settings';
+import { type AppSettings, DEFAULT_SETTINGS } from '../types/settings';
 import type { ISettingsRepository } from '../repositories/SettingsRepository';
 
 type SettingsContextValue = {
-  settings: DetectionSettings;
+  settings: AppSettings;
   loaded: boolean;
-  updateSetting: <K extends keyof DetectionSettings>(
+  updateSetting: <K extends keyof AppSettings>(
     key: K,
-    value: DetectionSettings[K],
+    value: AppSettings[K],
   ) => void;
 };
 
@@ -20,7 +20,7 @@ export function SettingsProvider({
   children: React.ReactNode;
   repository: ISettingsRepository;
 }) {
-  const [settings, setSettings] = useState<DetectionSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function SettingsProvider({
   }, [repository]);
 
   const updateSetting = useCallback(
-    <K extends keyof DetectionSettings>(key: K, value: DetectionSettings[K]) => {
+    <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
       setSettings((prev) => ({ ...prev, [key]: value }));
       void repository.save(key, value);
     },

@@ -1,21 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { type DetectionSettings, DEFAULT_SETTINGS } from '../types/settings';
+import { type AppSettings, DEFAULT_SETTINGS } from '../types/settings';
 
-const STORAGE_KEYS: Record<keyof DetectionSettings, string> = {
+const STORAGE_KEYS: Record<keyof AppSettings, string> = {
   voiceThresholdDb: 'setting:voiceThresholdDb',
   voiceOnsetMs: 'setting:voiceOnsetMs',
   silenceThresholdDb: 'setting:silenceThresholdDb',
   silenceDurationMs: 'setting:silenceDurationMs',
   minRecordingMs: 'setting:minRecordingMs',
+  maxRecordings: 'setting:maxRecordings',
 };
 
 export interface ISettingsRepository {
-  load(): Promise<DetectionSettings>;
-  save<K extends keyof DetectionSettings>(key: K, value: DetectionSettings[K]): Promise<void>;
+  load(): Promise<AppSettings>;
+  save<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void>;
 }
 
 export class RealSettingsRepository implements ISettingsRepository {
-  async load(): Promise<DetectionSettings> {
+  async load(): Promise<AppSettings> {
     const keys = Object.values(STORAGE_KEYS);
     const stored = await AsyncStorage.getMany(keys);
 
@@ -23,15 +24,15 @@ export class RealSettingsRepository implements ISettingsRepository {
     for (const [settingKey, storageKey] of Object.entries(STORAGE_KEYS)) {
       const value = stored[storageKey];
       if (value !== null && value !== undefined) {
-        settings[settingKey as keyof DetectionSettings] = Number(value);
+        settings[settingKey as keyof AppSettings] = Number(value);
       }
     }
     return settings;
   }
 
-  async save<K extends keyof DetectionSettings>(
+  async save<K extends keyof AppSettings>(
     key: K,
-    value: DetectionSettings[K],
+    value: AppSettings[K],
   ): Promise<void> {
     await AsyncStorage.setItem(STORAGE_KEYS[key], String(value));
   }
