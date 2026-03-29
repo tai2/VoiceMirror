@@ -29,6 +29,8 @@
   "settings.min_recording_description": "沈黙で録音を終了する前に必要な最小の音声時間（ms）。短すぎる偶発的な録音を防ぎます。",
   "settings.max_recordings_label": "最大録音数",
   "settings.max_recordings_description": "保持する録音の最大数。新しい録音が追加され上限に達すると、古い録音が自動的に削除されます。0で無制限。",
-  "settings.max_recordings_unlimited": "無制限",
+  "settings.unlimited": "無制限",
+  "settings.max_recording_duration_label": "最大録音時間",
+  "settings.max_recording_duration_description": "1回の録音の最大時間。上限に達すると録音が自動的に終了し再生が始まります。0で無制限。",
   "settings.default_prefix": "デフォルト:"
 }

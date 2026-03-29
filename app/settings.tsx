@@ -13,6 +13,8 @@ type SliderConfig = {
   max: number;
   step: number;
   unit: string;
+  displayValue?: (value: number, t: (key: string) => string) => string;
+  formatValue?: (value: number) => string;
 };
 
 const SLIDERS: SliderConfig[] = [
@@ -69,6 +71,19 @@ const SLIDERS: SliderConfig[] = [
     max: 200,
     step: 5,
     unit: "",
+    displayValue: (v, t) => (v === 0 ? t("settings.unlimited") : String(v)),
+  },
+  {
+    key: "maxRecordingMs",
+    labelKey: "settings.max_recording_duration_label",
+    descriptionKey: "settings.max_recording_duration_description",
+    min: 0,
+    max: 300000,
+    step: 5000,
+    unit: "s",
+    displayValue: (v, t) =>
+      v === 0 ? t("settings.unlimited") : `${v / 1000} s`,
+    formatValue: (v) => `${v / 1000}`,
   },
 ];
 
@@ -77,8 +92,8 @@ function SettingSlider({ config }: { config: SliderConfig }) {
   const { settings, updateSetting } = useSettings();
   const value = settings[config.key];
 
-  const displayValue = config.key === 'maxRecordings' && value === 0
-    ? t('settings.max_recordings_unlimited')
+  const displayValue = config.displayValue
+    ? config.displayValue(value, t)
     : `${value} ${config.unit}`;
 
   return (
@@ -99,13 +114,19 @@ function SettingSlider({ config }: { config: SliderConfig }) {
       />
       <View style={styles.sliderRange}>
         <Text style={styles.rangeLabel}>
-          {config.min} {config.unit}
+          {config.formatValue ? config.formatValue(config.min) : config.min}{" "}
+          {config.unit}
         </Text>
         <Text style={styles.defaultLabel}>
-          {t("settings.default_prefix")} {DEFAULT_SETTINGS[config.key]} {config.unit}
+          {t("settings.default_prefix")}{" "}
+          {config.formatValue
+            ? config.formatValue(DEFAULT_SETTINGS[config.key])
+            : DEFAULT_SETTINGS[config.key]}{" "}
+          {config.unit}
         </Text>
         <Text style={styles.rangeLabel}>
-          {config.max} {config.unit}
+          {config.formatValue ? config.formatValue(config.max) : config.max}{" "}
+          {config.unit}
         </Text>
       </View>
     </View>

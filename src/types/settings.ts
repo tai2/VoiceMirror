@@ -5,6 +5,7 @@ export type AppSettings = {
   silenceDurationMs: number;
   minRecordingMs: number;
   maxRecordings: number;
+  maxRecordingMs: number;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -14,6 +15,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   silenceDurationMs: 1500,
   minRecordingMs: 500,
   maxRecordings: 50,
+  maxRecordingMs: 60000,
 };
 
 export type DetectionSettings = Omit<AppSettings, 'maxRecordings'>;
