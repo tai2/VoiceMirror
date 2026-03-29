@@ -29,6 +29,8 @@
   "settings.min_recording_description": "Minimum amount of speech (in ms) that must be captured before silence can end the recording. Prevents very short accidental recordings.",
   "settings.max_recordings_label": "Max Recordings",
   "settings.max_recordings_description": "Maximum number of recordings to keep. When a new recording is added and the limit is reached, the oldest recordings are automatically deleted. Set to 0 for unlimited.",
-  "settings.max_recordings_unlimited": "Unlimited",
+  "settings.unlimited": "Unlimited",
+  "settings.max_recording_duration_label": "Max Recording Duration",
+  "settings.max_recording_duration_description": "Maximum duration of a single recording. When the limit is reached, the recording ends automatically and playback begins. Set to 0 for unlimited.",
   "settings.default_prefix": "default:"
 }

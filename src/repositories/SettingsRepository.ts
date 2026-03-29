@@ -8,6 +8,7 @@ const STORAGE_KEYS: Record<keyof AppSettings, string> = {
   silenceDurationMs: 'setting:silenceDurationMs',
   minRecordingMs: 'setting:minRecordingMs',
   maxRecordings: 'setting:maxRecordings',
+  maxRecordingMs: 'setting:maxRecordingMs',
 };
 
 export interface ISettingsRepository {

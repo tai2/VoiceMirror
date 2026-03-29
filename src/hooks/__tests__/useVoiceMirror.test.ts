@@ -382,3 +382,104 @@ describe('useVoiceMirror — list playback coordination', () => {
     expect(result.current.phase).toBe('paused');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Recording timeout
+// ---------------------------------------------------------------------------
+
+describe('useVoiceMirror — recording timeout', () => {
+  it('transitions to playing when speechMs exceeds maxRecordingMs', async () => {
+    const onRecordingComplete = jest.fn();
+    const recordingService = new StubAudioRecordingService();
+    const encoderService = new StubAudioEncoderService();
+    const repository = new StubRecordingsRepository();
+    const audioContext = makeStubAudioContext();
+
+    const { result } = renderHook(() =>
+      useVoiceMirror(
+        onRecordingComplete, audioContext, recordingService,
+        encoderService, repository, { ...DEFAULT_SETTINGS, maxRecordingMs: 2000 },
+      ),
+    );
+
+    await waitFor(() => expect(result.current.hasPermission).toBe(true));
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+
+      const chunkMs = 100;
+      const chunksNeeded = Math.ceil(2000 / chunkMs) + 2;
+      for (let i = 0; i < chunksNeeded; i++) {
+        jest.advanceTimersByTime(chunkMs);
+        recordingService.recorder.simulateChunk(makeLoudChunk(chunkMs));
+      }
+    });
+
+    await waitFor(() => expect(result.current.phase).toBe('playing'));
+  });
+
+  it('does not timeout when maxRecordingMs is 0 (unlimited)', async () => {
+    const onRecordingComplete = jest.fn();
+    const recordingService = new StubAudioRecordingService();
+    const encoderService = new StubAudioEncoderService();
+    const repository = new StubRecordingsRepository();
+    const audioContext = makeStubAudioContext();
+
+    const { result } = renderHook(() =>
+      useVoiceMirror(
+        onRecordingComplete, audioContext, recordingService,
+        encoderService, repository, { ...DEFAULT_SETTINGS, maxRecordingMs: 0 },
+      ),
+    );
+
+    await waitFor(() => expect(result.current.hasPermission).toBe(true));
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+
+      const chunkMs = 100;
+      const chunksNeeded = Math.ceil(5000 / chunkMs);
+      for (let i = 0; i < chunksNeeded; i++) {
+        jest.advanceTimersByTime(chunkMs);
+        recordingService.recorder.simulateChunk(makeLoudChunk(chunkMs));
+      }
+    });
+
+    expect(result.current.phase).toBe('recording');
+  });
+
+  it('calls onRecordingComplete when timeout triggers with valid encoding', async () => {
+    const onRecordingComplete = jest.fn();
+    const recordingService = new StubAudioRecordingService();
+    const encoderService = new StubAudioEncoderService();
+    const repository = new StubRecordingsRepository();
+    const audioContext = makeStubAudioContext();
+    encoderService.stopEncoding.mockResolvedValue(2000);
+
+    const { result } = renderHook(() =>
+      useVoiceMirror(
+        onRecordingComplete, audioContext, recordingService,
+        encoderService, repository, { ...DEFAULT_SETTINGS, maxRecordingMs: 2000 },
+      ),
+    );
+
+    await waitFor(() => expect(result.current.hasPermission).toBe(true));
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+
+      const chunkMs = 100;
+      const chunksNeeded = Math.ceil(2000 / chunkMs) + 2;
+      for (let i = 0; i < chunksNeeded; i++) {
+        jest.advanceTimersByTime(chunkMs);
+        recordingService.recorder.simulateChunk(makeLoudChunk(chunkMs));
+      }
+    });
+
+    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    expect(onRecordingComplete).toHaveBeenCalledWith(
+      expect.stringContaining('.m4a'),
+      2000,
+    );
+  });
+});

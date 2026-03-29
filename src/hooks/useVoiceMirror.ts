@@ -130,6 +130,14 @@ export function useVoiceMirror(
     } else if (phaseRef.current === 'recording') {
       const speechMs = ((totalFrames - voiceStartFrameRef.current) / sampleRate) * 1000;
 
+      if (s.maxRecordingMs > 0 && speechMs >= s.maxRecordingMs) {
+        silenceStartTimeRef.current = null;
+        phaseRef.current = 'playing';
+        setPhase('playing');
+        void stopAndPlay();
+        return;
+      }
+
       if (db < s.silenceThresholdDb && speechMs >= s.minRecordingMs) {
         if (silenceStartTimeRef.current === null) {
           silenceStartTimeRef.current = now;
