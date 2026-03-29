@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Typecheck, Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read tool versions from mise.toml
+        id: versions
+        run: |
+          echo "node=$(grep '^node' mise.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+          echo "pnpm=$(grep '^pnpm' mise.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.versions.outputs.node }}
+          cache: pnpm
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@${{ steps.versions.outputs.pnpm }} --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Typecheck E2E
+        run: pnpm typecheck:e2e
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test:ci
