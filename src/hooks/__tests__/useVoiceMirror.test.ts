@@ -345,6 +345,62 @@ describe('useVoiceMirror — pause / resume', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Pause during recording cleanup
+// ---------------------------------------------------------------------------
+
+describe('useVoiceMirror — pause during recording cleanup', () => {
+  it('calls stopEncoding and deleteFile when paused during recording', async () => {
+    const { result, recordingService, encoderService, repository } = await setupWithPermission();
+
+    act(() => { simulateVoiceOnset(recordingService); });
+    expect(result.current.phase).toBe('recording');
+
+    await act(async () => { result.current.togglePause(); });
+
+    expect(result.current.phase).toBe('paused');
+    expect(encoderService.stopEncoding).toHaveBeenCalledTimes(1);
+    expect(repository.deleteFile).toHaveBeenCalledTimes(1);
+    expect(repository.deleteFile).toHaveBeenCalledWith(expect.stringContaining('.m4a'));
+  });
+
+  it('skips stopEncoding but still deletes file when encoder had failed', async () => {
+    const { result, recordingService, encoderService, repository } = await setupWithPermission();
+
+    act(() => { simulateVoiceOnset(recordingService); });
+    expect(result.current.phase).toBe('recording');
+
+    // Make encodeChunk fail so encoderFailedRef becomes true
+    encoderService.encodeChunk.mockImplementation(() => { throw new Error('encode failed'); });
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeLoudChunk());
+    });
+
+    // Reset mock to track only pause-related calls
+    encoderService.stopEncoding.mockClear();
+
+    await act(async () => { result.current.togglePause(); });
+
+    expect(result.current.phase).toBe('paused');
+    expect(encoderService.stopEncoding).not.toHaveBeenCalled();
+    expect(repository.deleteFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call stopEncoding or deleteFile when paused from idle', async () => {
+    const { result, encoderService, repository } = await setupWithPermission();
+
+    expect(result.current.phase).toBe('idle');
+
+    await act(async () => { result.current.togglePause(); });
+
+    expect(result.current.phase).toBe('paused');
+    expect(encoderService.stopEncoding).not.toHaveBeenCalled();
+    expect(repository.deleteFile).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // List playback coordination
 // ---------------------------------------------------------------------------
 

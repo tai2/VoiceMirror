@@ -3,6 +3,23 @@ import { loadRecordings, saveRecordings, newFilePath } from '../recordings';
 const store: Record<string, string> = {};
 
 jest.mock('expo-file-system', () => {
+  class MockFile {
+    private key: string;
+    constructor(parentOrUri: { uri?: string } | string, name?: string) {
+      if (typeof parentOrUri === 'string') {
+        this.key = parentOrUri.replace('file://', '');
+      } else {
+        const parentUri = (parentOrUri as { uri?: string }).uri ?? '';
+        this.key = `${parentUri.replace('file://', '')}/${name ?? ''}`;
+      }
+    }
+    get uri() { return 'file://' + this.key; }
+    get exists() { return this.key in store; }
+    async text() { return store[this.key] ?? '[]'; }
+    write(content: string) { store[this.key] = content; }
+    delete() { delete store[this.key]; }
+  }
+
   return {
     Paths: { document: '/mock/documents' },
     Directory: class MockDirectory {
@@ -12,27 +29,19 @@ jest.mock('expo-file-system', () => {
         this.parent = typeof parent === 'string' ? parent : (parent as { uri?: string }).uri ?? '';
         this.name = name;
       }
+      get uri() { return `file://${this.parent}/${this.name}`; }
       get exists() {
         return (`${this.parent}/${this.name}`) in store || true;
       }
       create(_opts?: { intermediates?: boolean }) {}
-    },
-    File: class MockFile {
-      private key: string;
-      constructor(parentOrUri: { uri?: string } | string, name?: string) {
-        if (typeof parentOrUri === 'string') {
-          this.key = parentOrUri.replace('file://', '');
-        } else {
-          const parentUri = (parentOrUri as { uri?: string }).uri ?? '';
-          this.key = `${parentUri.replace('file://', '')}/${name ?? ''}`;
-        }
+      list() {
+        const dirPath = `${this.parent}/${this.name}`;
+        return Object.keys(store)
+          .filter(k => k.startsWith(dirPath + '/') && k.endsWith('.m4a'))
+          .map(k => new MockFile('file://' + k));
       }
-      get uri() { return 'file://' + this.key; }
-      get exists() { return this.key in store; }
-      async text() { return store[this.key] ?? '[]'; }
-      write(content: string) { store[this.key] = content; }
-      delete() { delete store[this.key]; }
     },
+    File: MockFile,
   };
 });
 
@@ -111,6 +120,59 @@ describe('loadRecordings — stale entry cleanup', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('Removing stale entry'),
       );
+    warnSpy.mockRestore();
+  });
+});
+
+describe('loadRecordings — orphan cleanup', () => {
+  it('deletes .m4a files in the recordings directory that are not in the index', async () => {
+    const recordings = [
+      { id: '1', filePath: 'file:///mock/documents/recordings/a.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
+    ];
+    saveRecordings(recordings);
+    store['/mock/documents/recordings/a.m4a'] = 'audio-data';
+    store['/mock/documents/recordings/orphan.m4a'] = 'orphan-audio-data';
+
+    await loadRecordings();
+
+    expect(store['/mock/documents/recordings/a.m4a']).toBe('audio-data');
+    expect('/mock/documents/recordings/orphan.m4a' in store).toBe(false);
+  });
+
+  it('does not delete .m4a files that are referenced by the index', async () => {
+    const recordings = [
+      { id: '1', filePath: 'file:///mock/documents/recordings/a.m4a', recordedAt: '2026-01-01T00:00:00.000Z', durationMs: 1000 },
+      { id: '2', filePath: 'file:///mock/documents/recordings/b.m4a', recordedAt: '2026-01-02T00:00:00.000Z', durationMs: 2000 },
+    ];
+    saveRecordings(recordings);
+    store['/mock/documents/recordings/a.m4a'] = 'audio-data-a';
+    store['/mock/documents/recordings/b.m4a'] = 'audio-data-b';
+
+    await loadRecordings();
+
+    expect(store['/mock/documents/recordings/a.m4a']).toBe('audio-data-a');
+    expect(store['/mock/documents/recordings/b.m4a']).toBe('audio-data-b');
+  });
+
+  it('does not delete non-.m4a files in the recordings directory', async () => {
+    saveRecordings([]);
+    store['/mock/documents/recordings/notes.txt'] = 'some notes';
+
+    await loadRecordings();
+
+    expect(store['/mock/documents/recordings/notes.txt']).toBe('some notes');
+  });
+
+  it('logs a warning for each orphaned file deleted', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    saveRecordings([]);
+    store['/mock/documents/recordings/orphan.m4a'] = 'orphan-data';
+
+    await loadRecordings();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Deleting orphaned file'),
+    );
     warnSpy.mockRestore();
   });
 });

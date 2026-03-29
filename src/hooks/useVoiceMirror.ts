@@ -284,6 +284,21 @@ export function useVoiceMirror(
     const recorder = audioRecorderRef.current!;
     recorder.clearOnAudioReady();
     recorder.stop();
+
+    // Clean up in-progress encoding if paused during recording
+    if (pendingFilePathRef.current) {
+      const filePath = pendingFilePathRef.current;
+      pendingFilePathRef.current = null;
+      if (!encoderFailedRef.current) {
+        try {
+          await encoderService.stopEncoding();
+        } catch (e) {
+          console.error('[AudioEncoder] stopEncoding failed during pause cleanup:', e);
+        }
+      }
+      repository.deleteFile(filePath);
+    }
+
     await recordingService.setAudioSessionActivity(false);
     phaseRef.current = 'paused';
     setPhase('paused');
