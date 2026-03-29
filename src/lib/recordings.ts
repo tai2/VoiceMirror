@@ -38,6 +38,22 @@ export async function loadRecordings(): Promise<Recording[]> {
     saveRecordings(valid);
   }
 
+  // Delete orphaned .m4a files (on disk but not in index)
+  const validUris = new Set(valid.map(r => r.filePath));
+  const dir = recordingsDir();
+  for (const entry of dir.list()) {
+    if (entry instanceof File && entry.uri.endsWith('.m4a') && !validUris.has(entry.uri)) {
+      console.warn(
+        `[recordings] Deleting orphaned file: ${entry.uri} (not in index)`,
+      );
+      try {
+        entry.delete();
+      } catch (e) {
+        console.error(`[recordings] Failed to delete orphaned file: ${entry.uri}`, e);
+      }
+    }
+  }
+
   return valid;
 }
 
