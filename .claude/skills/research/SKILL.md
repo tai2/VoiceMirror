@@ -1,7 +1,7 @@
 ---
 name: research
 description: Deep-read a folder, module, or system and write a detailed report to research.md
-argument-hint: <folder or module to study>
+argument-hint: <subjects to study>
 context: fork
 allowed-tools: Read, Glob, Grep, Bash(git log:*), Bash(git blame:*), Edit, Write
 ---
