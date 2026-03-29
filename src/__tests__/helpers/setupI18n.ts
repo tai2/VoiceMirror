@@ -5,6 +5,7 @@ import en from "../../i18n/locales/en/translation.json";
 export function setupTestI18n() {
   if (i18n.isInitialized) return i18n;
 
+  // eslint-disable-next-line import/no-named-as-default-member
   i18n.use(initReactI18next).init({
     resources: { en: { translation: en } },
     lng: "en",
