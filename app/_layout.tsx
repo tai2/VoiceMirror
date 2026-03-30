@@ -17,6 +17,16 @@ import {
   type E2EConnectionStatus,
 } from "../src/services/E2EAudioRecordingService";
 
+// Design tokens
+const colors = {
+  background: "#0A0A0B",
+  surface: "#141416",
+  border: "#2A2A2E",
+  textPrimary: "#FAFAFA",
+  textSecondary: "#A1A1AA",
+  accent: "#3B82F6",
+};
+
 const isE2E = process.env.EXPO_PUBLIC_E2E === "1";
 
 const realServices = {
@@ -82,14 +92,31 @@ function E2EBanner() {
 function RootStack() {
   const { t } = useTranslation();
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerTintColor: colors.textPrimary,
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+        contentStyle: {
+          backgroundColor: colors.background,
+        },
+      }}
+    >
       <Stack.Screen
         name="index"
         options={{ title: "VoiceMirror", headerShown: false }}
       />
       <Stack.Screen
         name="settings"
-        options={{ title: t("settings.title"), presentation: "card" }}
+        options={{ 
+          title: t("settings.title"), 
+          presentation: "card",
+          headerShadowVisible: false,
+        }}
       />
     </Stack>
   );
@@ -103,7 +130,7 @@ export default function RootLayout() {
           <SettingsProvider repository={settingsRepository}>
             <RootStack />
             {isE2E && <E2EBanner />}
-            <StatusBar style="dark" />
+            <StatusBar style="light" />
           </SettingsProvider>
         </ServicesProvider>
       </I18nProvider>
@@ -114,6 +141,7 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   e2eBanner: {
     position: "absolute",

@@ -4,6 +4,16 @@ import type { Recording } from '../lib/recordings';
 import type { PlayState } from '../hooks/useRecordings';
 import { RecordingItem } from './RecordingItem';
 
+// Design tokens
+const colors = {
+  background: '#0A0A0B',
+  surface: '#141416',
+  surfaceElevated: '#1C1C1F',
+  border: '#2A2A2E',
+  textMuted: '#71717A',
+  accent: '#3B82F6',
+};
+
 type Props = {
   recordings: Recording[];
   playState: PlayState;
@@ -18,7 +28,14 @@ export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, 
   if (recordings.length === 0) {
     return (
       <View style={styles.empty}>
+        <View style={styles.emptyIconContainer}>
+          <View style={styles.emptyIcon} />
+          <View style={styles.emptyIconBar1} />
+          <View style={styles.emptyIconBar2} />
+          <View style={styles.emptyIconBar3} />
+        </View>
         <Text style={styles.emptyText}>{t('recordings.empty')}</Text>
+        <Text style={styles.emptyHint}>{t('recordings.empty_hint') || 'Start speaking to record'}</Text>
       </View>
     );
   }
@@ -37,12 +54,66 @@ export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, 
         />
       )}
       style={styles.list}
+      contentContainerStyle={styles.listContent}
+      showsVerticalScrollIndicator={false}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#BBB', fontSize: 14 },
+  list: { 
+    flex: 1,
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+  empty: { 
+    flex: 1, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    paddingVertical: 48,
+    gap: 12,
+  },
+  emptyIconContainer: {
+    width: 64,
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  emptyIcon: {
+    width: 8,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  emptyIconBar1: {
+    width: 8,
+    height: 32,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  emptyIconBar2: {
+    width: 8,
+    height: 24,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  emptyIconBar3: {
+    width: 8,
+    height: 16,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  emptyText: { 
+    color: colors.textMuted, 
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  emptyHint: {
+    color: colors.border,
+    fontSize: 13,
+  },
 });
