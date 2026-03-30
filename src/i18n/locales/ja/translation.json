@@ -13,7 +13,9 @@
   "phase.playing": "再生中",
   "phase.paused": "一時停止",
 
+  "recordings.title": "録音一覧",
   "recordings.empty": "録音はまだありません",
+  "recordings.empty_hint": "話しかけて録音を開始",
   "recordings.delete": "削除",
 
   "settings.title": "設定",

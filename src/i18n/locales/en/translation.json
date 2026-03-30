@@ -13,7 +13,9 @@
   "phase.playing": "Playing back",
   "phase.paused": "Paused",
 
+  "recordings.title": "Recordings",
   "recordings.empty": "No recordings yet",
+  "recordings.empty_hint": "Start speaking to record",
   "recordings.delete": "Delete",
 
   "settings.title": "Settings",
