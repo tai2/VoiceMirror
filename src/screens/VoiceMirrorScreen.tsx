@@ -14,6 +14,22 @@ import {
 import { useServices } from "../context/ServicesProvider";
 import { useSettings } from "../context/SettingsProvider";
 
+// Design tokens
+const colors = {
+  background: "#0A0A0B",
+  surface: "#141416",
+  surfaceElevated: "#1C1C1F",
+  border: "#2A2A2E",
+  textPrimary: "#FAFAFA",
+  textSecondary: "#A1A1AA",
+  textMuted: "#71717A",
+  accent: "#3B82F6",
+  accentHover: "#2563EB",
+  recording: "#EF4444",
+  playing: "#22C55E",
+  paused: "#71717A",
+};
+
 function VoiceMirrorContent() {
   const { t } = useTranslation();
   const audioContext = useAudioContext();
@@ -73,15 +89,21 @@ function VoiceMirrorContent() {
   resumeRef.current = resumeFromListPlayback;
 
   const isPaused = phase === "paused";
+  const isRecording = phase === "recording";
 
   if (permissionDenied) {
     return (
       <SafeAreaView style={styles.root}>
         <View style={styles.center}>
-          <Text style={styles.errorTitle}>{t('main.error_title')}</Text>
-          <Text style={styles.errorBody}>
-            {t('main.error_body')}
-          </Text>
+          <View style={styles.errorCard}>
+            <View style={styles.errorIconContainer}>
+              <Text style={styles.errorIcon}>!</Text>
+            </View>
+            <Text style={styles.errorTitle}>{t('main.error_title')}</Text>
+            <Text style={styles.errorBody}>
+              {t('main.error_body')}
+            </Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -91,7 +113,10 @@ function VoiceMirrorContent() {
     return (
       <SafeAreaView style={styles.root}>
         <View style={styles.center}>
-          <Text style={styles.hint}>{t('main.hint_requesting')}</Text>
+          <View style={styles.loadingContainer}>
+            <View style={styles.loadingDot} />
+            <Text style={styles.hint}>{t('main.hint_requesting')}</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -100,7 +125,7 @@ function VoiceMirrorContent() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.topBar}>
-        <View style={styles.topBarSpacer} />
+        <Text style={styles.appTitle}>VoiceMirror</Text>
         <Pressable
           onPress={() => router.push("/settings")}
           style={({ pressed }) => [
@@ -108,10 +133,13 @@ function VoiceMirrorContent() {
             pressed && styles.settingsButtonPressed,
           ]}
         >
-          <Text style={styles.settingsIcon}>&#x2699;</Text>
+          <View style={styles.settingsIconContainer}>
+            <Text style={styles.settingsIcon}>&#x2699;</Text>
+          </View>
         </Pressable>
       </View>
-      <View style={styles.monitor}>
+      
+      <View style={styles.monitorCard}>
         <PhaseDisplay phase={phase} />
         <View style={styles.meterContainer}>
           <AudioLevelMeter history={levelHistory} phase={phase} />
@@ -120,7 +148,9 @@ function VoiceMirrorContent() {
           {isPaused ? t('main.hint_paused') : t('main.hint_listening')}
         </Text>
         {recordingError && (
-          <Text style={styles.recordingError}>{t(`main.${recordingError}`)}</Text>
+          <View style={styles.errorBadge}>
+            <Text style={styles.recordingError}>{t(`main.${recordingError}`)}</Text>
+          </View>
         )}
         <Pressable
           testID="toggle-pause-button"
@@ -128,24 +158,35 @@ function VoiceMirrorContent() {
           onPress={togglePause}
           style={({ pressed }) => [
             styles.pauseButton,
+            isPaused && styles.pauseButtonActive,
+            isRecording && styles.pauseButtonRecording,
             pressed && styles.pauseButtonPressed,
           ]}
         >
-          <Text style={styles.pauseButtonLabel}>
+          <Text style={[
+            styles.pauseButtonLabel,
+            isPaused && styles.pauseButtonLabelActive,
+          ]}>
             {isPaused ? t('main.button_resume') : t('main.button_pause')}
           </Text>
         </Pressable>
       </View>
 
-      <View style={styles.divider} />
-
-      <RecordingsList
-        recordings={recordings}
-        playState={playState}
-        onTogglePlay={togglePlay}
-        onDelete={(r) => deleteRecording(r.id)}
-        disabled={phase === "recording"}
-      />
+      <View style={styles.recordingsSection}>
+        <View style={styles.recordingsHeader}>
+          <Text style={styles.recordingsTitle}>{t('recordings.title') || 'Recordings'}</Text>
+          <View style={styles.recordingsCountBadge}>
+            <Text style={styles.recordingsCount}>{recordings.length}</Text>
+          </View>
+        </View>
+        <RecordingsList
+          recordings={recordings}
+          playState={playState}
+          onTogglePlay={togglePlay}
+          onDelete={(r) => deleteRecording(r.id)}
+          disabled={phase === "recording"}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -161,26 +202,41 @@ export function VoiceMirrorScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  topBarSpacer: {
-    flex: 1,
+  appTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
   },
   settingsButton: {
-    padding: 8,
+    padding: 4,
   },
   settingsButtonPressed: {
-    opacity: 0.5,
+    opacity: 0.6,
+  },
+  settingsIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   settingsIcon: {
-    fontSize: 24,
-    color: "#888",
+    fontSize: 20,
+    color: colors.textSecondary,
   },
   center: {
     flex: 1,
@@ -188,54 +244,144 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 32,
   },
-  monitor: {
+  loadingContainer: {
     alignItems: "center",
-    paddingHorizontal: 32,
+    gap: 16,
+  },
+  loadingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.accent,
+  },
+  monitorCard: {
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginTop: 8,
+    paddingHorizontal: 24,
     paddingVertical: 32,
     gap: 24,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   meterContainer: {
     width: "100%",
     alignItems: "center",
+    paddingVertical: 8,
   },
   hint: {
-    color: "#AAA",
+    color: colors.textMuted,
     fontSize: 14,
     textAlign: "center",
+    fontWeight: "500",
   },
   pauseButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 30,
-    backgroundColor: "#EEEEEE",
+    paddingHorizontal: 40,
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: 160,
+    alignItems: "center",
+  },
+  pauseButtonActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  pauseButtonRecording: {
+    borderColor: colors.recording,
   },
   pauseButtonPressed: {
-    backgroundColor: "#DDDDDD",
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
   },
   pauseButtonLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#555555",
+    color: colors.textSecondary,
+    letterSpacing: 0.3,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#DDD",
+  pauseButtonLabelActive: {
+    color: colors.textPrimary,
+  },
+  recordingsSection: {
+    flex: 1,
+    marginTop: 24,
+  },
+  recordingsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    gap: 10,
+  },
+  recordingsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  recordingsCountBadge: {
+    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recordingsCount: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    fontVariant: ["tabular-nums"],
+  },
+  errorCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 32,
+    alignItems: "center",
+    gap: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    maxWidth: 320,
+  },
+  errorIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorIcon: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.recording,
+  },
+  errorBadge: {
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
   recordingError: {
-    color: "#CC3333",
-    fontSize: 14,
+    color: colors.recording,
+    fontSize: 13,
     textAlign: "center",
+    fontWeight: "500",
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
+    color: colors.textPrimary,
     textAlign: "center",
   },
   errorBody: {
     fontSize: 14,
-    color: "#666",
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 22,
   },

@@ -5,11 +5,27 @@ import { useTranslation } from 'react-i18next';
 import type { Recording } from '../lib/recordings';
 import type { PlayState } from '../hooks/useRecordings';
 
+// Design tokens
+const colors = {
+  background: '#0A0A0B',
+  surface: '#141416',
+  surfaceElevated: '#1C1C1F',
+  border: '#2A2A2E',
+  textPrimary: '#FAFAFA',
+  textSecondary: '#A1A1AA',
+  textMuted: '#71717A',
+  accent: '#3B82F6',
+  accentLight: 'rgba(59, 130, 246, 0.15)',
+  playing: '#22C55E',
+  playingLight: 'rgba(34, 197, 94, 0.15)',
+  danger: '#EF4444',
+};
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return (
     d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
-    '  ' +
+    ' at ' +
     d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
   );
 }
@@ -21,7 +37,7 @@ function formatDuration(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-const ACTION_WIDTH = 80;
+const ACTION_WIDTH = 88;
 const FULL_SWIPE_RATIO = 0.5;
 
 type Props = {
@@ -71,7 +87,9 @@ export function RecordingItem({ recording, playState, onTogglePlay, onDelete, di
           }}
           style={styles.deleteButton}
         >
-          <Text style={styles.deleteIcon}>🗑</Text>
+          <View style={styles.deleteIconContainer}>
+            <Text style={styles.deleteIconText}>X</Text>
+          </View>
           <Text style={styles.deleteLabel}>{t('recordings.delete')}</Text>
         </Pressable>
       </Animated.View>
@@ -87,20 +105,37 @@ export function RecordingItem({ recording, playState, onTogglePlay, onDelete, di
       onSwipeableWillOpen={handleSwipeableWillOpen}
       enabled={!disabled}
     >
-      <View style={styles.row} testID={`recording-row-${recording.id}`} accessibilityLabel={`recording-row-${recording.id}`}>
+      <View 
+        style={[styles.row, isPlaying && styles.rowPlaying]} 
+        testID={`recording-row-${recording.id}`} 
+        accessibilityLabel={`recording-row-${recording.id}`}
+      >
         <Pressable
           testID={`play-recording-${recording.id}`}
           accessibilityLabel={`play-recording-${recording.id}`}
           onPress={onTogglePlay}
           disabled={disabled}
-          style={({ pressed }) => [styles.playButton, disabled && styles.playButtonDisabled, pressed && styles.playButtonPressed]}
+          style={({ pressed }) => [
+            styles.playButton, 
+            isPlaying && styles.playButtonPlaying,
+            disabled && styles.playButtonDisabled, 
+            pressed && styles.playButtonPressed
+          ]}
           hitSlop={8}
         >
-          <Text style={styles.playIcon}>{isPlaying ? '■' : '▶'}</Text>
+          <Text style={[styles.playIcon, isPlaying && styles.playIconPlaying]}>
+            {isPlaying ? '\u25A0' : '\u25B6'}
+          </Text>
         </Pressable>
         <View style={styles.meta}>
-          <Text style={styles.date}>{formatDate(recording.recordedAt)}</Text>
-          <Text style={styles.duration}>{formatDuration(recording.durationMs)}</Text>
+          <View style={styles.metaLeft}>
+            <Text style={[styles.date, isPlaying && styles.textPlaying]}>
+              {formatDate(recording.recordedAt)}
+            </Text>
+          </View>
+          <View style={styles.durationBadge}>
+            <Text style={styles.duration}>{formatDuration(recording.durationMs)}</Text>
+          </View>
         </View>
       </View>
     </Swipeable>
@@ -111,30 +146,74 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    gap: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
+    gap: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  rowPlaying: {
+    backgroundColor: colors.playingLight,
   },
   playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#4A9EFF',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  playButtonPlaying: {
+    backgroundColor: colors.playing,
+    borderColor: colors.playing,
   },
   playButtonDisabled: { opacity: 0.35 },
-  playButtonPressed: { opacity: 0.7 },
-  playIcon: { color: '#FFF', fontSize: 14, lineHeight: 16 },
-  meta: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  date: { fontSize: 13, color: '#444' },
-  duration: { fontSize: 13, color: '#888', fontVariant: ['tabular-nums'] },
+  playButtonPressed: { opacity: 0.7, transform: [{ scale: 0.95 }] },
+  playIcon: { 
+    color: colors.textSecondary, 
+    fontSize: 14, 
+    lineHeight: 18,
+  },
+  playIconPlaying: {
+    color: colors.textPrimary,
+  },
+  meta: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center' 
+  },
+  metaLeft: {
+    flex: 1,
+  },
+  date: { 
+    fontSize: 14, 
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  textPlaying: {
+    color: colors.playing,
+  },
+  durationBadge: {
+    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  duration: { 
+    fontSize: 13, 
+    color: colors.textMuted, 
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
   deleteAction: {
     width: ACTION_WIDTH,
-    backgroundColor: '#FF3B30',
+    backgroundColor: colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -143,13 +222,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    gap: 6,
   },
-  deleteIcon: {
-    fontSize: 20,
+  deleteIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteIconText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   deleteLabel: {
     color: '#FFF',
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

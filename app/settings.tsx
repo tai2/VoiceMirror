@@ -5,6 +5,19 @@ import { useSettings } from "../src/context/SettingsProvider";
 import type { AppSettings } from "../src/types/settings";
 import { DEFAULT_SETTINGS } from "../src/types/settings";
 
+// Design tokens
+const colors = {
+  background: "#0A0A0B",
+  surface: "#141416",
+  surfaceElevated: "#1C1C1F",
+  border: "#2A2A2E",
+  textPrimary: "#FAFAFA",
+  textSecondary: "#A1A1AA",
+  textMuted: "#71717A",
+  accent: "#3B82F6",
+  accentMuted: "#2563EB",
+};
+
 type SliderConfig = {
   key: keyof AppSettings;
   labelKey: string;
@@ -100,30 +113,37 @@ function SettingSlider({ config }: { config: SliderConfig }) {
     <View style={styles.sliderCard}>
       <View style={styles.sliderHeader}>
         <Text style={styles.sliderLabel}>{t(config.labelKey)}</Text>
-        <Text style={styles.sliderValue}>{displayValue}</Text>
+        <View style={styles.valueBadge}>
+          <Text style={styles.sliderValue}>{displayValue}</Text>
+        </View>
       </View>
       <Text style={styles.sliderDescription}>{t(config.descriptionKey)}</Text>
-      <Slider
-        minimumValue={config.min}
-        maximumValue={config.max}
-        step={config.step}
-        value={value}
-        onValueChange={(v: number) => updateSetting(config.key, v)}
-        minimumTrackTintColor="#4A9EFF"
-        maximumTrackTintColor="#DDD"
-      />
+      <View style={styles.sliderContainer}>
+        <Slider
+          minimumValue={config.min}
+          maximumValue={config.max}
+          step={config.step}
+          value={value}
+          onValueChange={(v: number) => updateSetting(config.key, v)}
+          minimumTrackTintColor={colors.accent}
+          maximumTrackTintColor={colors.border}
+          thumbTintColor={colors.accent}
+        />
+      </View>
       <View style={styles.sliderRange}>
         <Text style={styles.rangeLabel}>
           {config.formatValue ? config.formatValue(config.min) : config.min}{" "}
           {config.unit}
         </Text>
-        <Text style={styles.defaultLabel}>
-          {t("settings.default_prefix")}{" "}
-          {config.formatValue
-            ? config.formatValue(DEFAULT_SETTINGS[config.key])
-            : DEFAULT_SETTINGS[config.key]}{" "}
-          {config.unit}
-        </Text>
+        <View style={styles.defaultBadge}>
+          <Text style={styles.defaultLabel}>
+            {t("settings.default_prefix")}{" "}
+            {config.formatValue
+              ? config.formatValue(DEFAULT_SETTINGS[config.key])
+              : DEFAULT_SETTINGS[config.key]}{" "}
+            {config.unit}
+          </Text>
+        </View>
         <Text style={styles.rangeLabel}>
           {config.formatValue ? config.formatValue(config.max) : config.max}{" "}
           {config.unit}
@@ -136,7 +156,10 @@ function SettingSlider({ config }: { config: SliderConfig }) {
 export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {SLIDERS.map((config) => (
           <SettingSlider key={config.key} config={config} />
         ))}
@@ -146,27 +169,72 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FAFAFA" },
-  scrollContent: { padding: 16, gap: 16, paddingBottom: 40 },
+  root: { 
+    flex: 1, 
+    backgroundColor: colors.background,
+  },
+  scrollContent: { 
+    padding: 20, 
+    gap: 16, 
+    paddingBottom: 40,
+  },
   sliderCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sliderHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  sliderLabel: { fontSize: 16, fontWeight: "600", color: "#333" },
-  sliderValue: { fontSize: 16, fontWeight: "700", color: "#4A9EFF" },
-  sliderDescription: { fontSize: 13, color: "#888", lineHeight: 18 },
+  sliderLabel: { 
+    fontSize: 15, 
+    fontWeight: "600", 
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  valueBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  sliderValue: { 
+    fontSize: 14, 
+    fontWeight: "700", 
+    color: colors.accent,
+    fontVariant: ['tabular-nums'],
+  },
+  sliderDescription: { 
+    fontSize: 13, 
+    color: colors.textMuted, 
+    lineHeight: 20,
+  },
+  sliderContainer: {
+    paddingVertical: 8,
+  },
   sliderRange: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  rangeLabel: { fontSize: 11, color: "#AAA" },
-  defaultLabel: { fontSize: 11, color: "#AAA", fontStyle: "italic" },
+  rangeLabel: { 
+    fontSize: 11, 
+    color: colors.textMuted,
+    fontVariant: ['tabular-nums'],
+  },
+  defaultBadge: {
+    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  defaultLabel: { 
+    fontSize: 11, 
+    color: colors.textMuted,
+  },
 });
