@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AudioContext, AudioBufferSourceNode } from 'react-native-audio-api';
+import { LEVEL_HISTORY_SIZE } from '../constants/audio';
+import { usePlaybackLevelHistory } from './usePlaybackLevelHistory';
 import type { Recording } from '../lib/recordings';
 import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
 import type { IAudioDecoderService } from '../services/AudioDecoderService';
@@ -14,6 +16,7 @@ type RecordingsOptions = {
 export type RecordingsState = {
   recordings: Recording[];
   playState: PlayState;
+  levelHistory: number[];
   addRecording: (filePath: string, durationMs: number) => void;
   deleteRecording: (id: string) => void;
   togglePlay: (recording: Recording) => void;
@@ -28,6 +31,10 @@ export function useRecordings(
 ): RecordingsState {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [playState, setPlayState] = useState<PlayState>(null);
+  const [levelHistory, setLevelHistory] = useState<number[]>(
+    () => new Array(LEVEL_HISTORY_SIZE).fill(0),
+  );
+  const { startPlaybackLevels, stopPlaybackLevels } = usePlaybackLevelHistory();
   const recordingsRef = useRef<Recording[]>(recordings);
   recordingsRef.current = recordings;
   const repositoryRef = useRef(repository);
@@ -45,8 +52,9 @@ export function useRecordings(
         sourceRef.current.stop();
         sourceRef.current = null;
       }
+      stopPlaybackLevels();
     };
-  }, [repository]);
+  }, [repository, stopPlaybackLevels]);
 
   const stopCurrentPlayer = useCallback((notify: boolean) => {
     if (sourceRef.current) {
@@ -54,9 +62,11 @@ export function useRecordings(
       sourceRef.current.stop();
       sourceRef.current = null;
       setPlayState(null);
+      stopPlaybackLevels();
+      setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
     }
     if (notify) void options.onDidStop();
-  }, [options]);
+  }, [options, stopPlaybackLevels]);
 
   const addRecording = useCallback((filePath: string, durationMs: number) => {
     const entry: Recording = {
@@ -134,10 +144,13 @@ export function useRecordings(
     source.onEnded = () => {
       sourceRef.current = null;
       setPlayState(null);
+      stopPlaybackLevels();
+      setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
       void options.onDidStop();
     };
     source.start(0);
-  }, [playState, audioContext, decoderService, stopCurrentPlayer, options]);
+    startPlaybackLevels(audioBuffer, 0, setLevelHistory);
+  }, [playState, audioContext, decoderService, stopCurrentPlayer, options, startPlaybackLevels, stopPlaybackLevels]);
 
-  return { recordings, playState, addRecording, deleteRecording, togglePlay };
+  return { recordings, playState, levelHistory, addRecording, deleteRecording, togglePlay };
 }

@@ -3,7 +3,7 @@ import { useVoiceMirror } from '../useVoiceMirror';
 import { StubAudioRecordingService } from '../../__tests__/stubs/stubAudioRecordingService';
 import { StubAudioEncoderService } from '../../__tests__/stubs/stubAudioEncoderService';
 import { StubRecordingsRepository } from '../../__tests__/stubs/stubRecordingsRepository';
-import { makeStubAudioContext } from '../../__tests__/stubs/stubAudioContext';
+import { makeStubAudioContext, makeStubBufferSourceNode } from '../../__tests__/stubs/stubAudioContext';
 import { LEVEL_HISTORY_SIZE } from '../../constants/audio';
 import { DEFAULT_SETTINGS } from '../../types/settings';
 
@@ -537,5 +537,89 @@ describe('useVoiceMirror — recording timeout', () => {
       expect.stringContaining('.m4a'),
       2000,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Level history during playback
+// ---------------------------------------------------------------------------
+
+describe('useVoiceMirror — level history during playback', () => {
+  it('levelHistory updates during the playing phase', async () => {
+    const { result, recordingService, audioContext } = await setupWithPermission();
+
+    // Make createBuffer return a buffer with loud audio data
+    const loudData = new Float32Array(44100).fill(0.5);
+    const stubBuffer = {
+      length: 44100,
+      duration: 1,
+      numberOfChannels: 1,
+      sampleRate: 44100,
+      getChannelData: jest.fn(() => loudData),
+      copyFromChannel: jest.fn(),
+      copyToChannel: jest.fn(),
+    };
+    (audioContext.createBuffer as jest.Mock).mockReturnValue(stubBuffer);
+
+    const stubSource = makeStubBufferSourceNode();
+    (audioContext.createBufferSource as jest.Mock).mockReturnValue(stubSource);
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+      const minChunks = Math.ceil(MIN_RECORDING_MS / 100) + 1;
+      for (let i = 0; i < minChunks; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeLoudChunk());
+      }
+      simulateSilence(recordingService);
+    });
+
+    await waitFor(() => expect(result.current.phase).toBe('playing'));
+
+    // Advance timers to trigger playback level ticks
+    act(() => { jest.advanceTimersByTime(93 * 3); });
+
+    const hasNonZero = result.current.levelHistory.some(v => v > 0);
+    expect(hasNonZero).toBe(true);
+  });
+
+  it('levelHistory stops updating after playback ends', async () => {
+    const { result, recordingService, audioContext } = await setupWithPermission();
+
+    const loudData = new Float32Array(44100).fill(0.5);
+    const stubBuffer = {
+      length: 44100,
+      duration: 1,
+      numberOfChannels: 1,
+      sampleRate: 44100,
+      getChannelData: jest.fn(() => loudData),
+      copyFromChannel: jest.fn(),
+      copyToChannel: jest.fn(),
+    };
+    (audioContext.createBuffer as jest.Mock).mockReturnValue(stubBuffer);
+
+    const stubSource = makeStubBufferSourceNode();
+    (audioContext.createBufferSource as jest.Mock).mockReturnValue(stubSource);
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+      const minChunks = Math.ceil(MIN_RECORDING_MS / 100) + 1;
+      for (let i = 0; i < minChunks; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeLoudChunk());
+      }
+      simulateSilence(recordingService);
+    });
+
+    await waitFor(() => expect(result.current.phase).toBe('playing'));
+
+    // Trigger onEnded to simulate playback ending
+    act(() => { stubSource.onEnded?.(); });
+
+    // Advance timers - should not produce further playback level updates
+    act(() => { jest.advanceTimersByTime(93 * 5); });
+
+    // Phase should be idle now (startMonitoring resets)
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
   });
 });

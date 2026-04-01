@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AudioContext } from 'react-native-audio-api';
-import {
-  LEVEL_HISTORY_SIZE,
-  DB_FLOOR,
-  DB_CEIL,
-} from '../constants/audio';
+import { LEVEL_HISTORY_SIZE } from '../constants/audio';
+import { computeNormalizedLevel } from '../lib/audio';
+import { usePlaybackLevelHistory } from './usePlaybackLevelHistory';
 import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types';
 import type { IAudioRecordingService, IAudioRecorder } from '../services/AudioRecordingService';
 import type { IAudioEncoderService } from '../services/AudioEncoderService';
@@ -30,6 +28,8 @@ export function useVoiceMirror(
   const [levelHistory, setLevelHistory] = useState<number[]>(
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
+
+  const { startPlaybackLevels, stopPlaybackLevels } = usePlaybackLevelHistory();
 
   const audioContextRef = useRef(audioContext);
   const audioRecorderRef = useRef<IAudioRecorder | null>(null);
@@ -73,8 +73,9 @@ export function useVoiceMirror(
     return () => {
       audioRecorderRef.current?.clearOnAudioReady();
       void audioRecorderRef.current?.stop();
+      stopPlaybackLevels();
     };
-  }, [audioContext, recordingService]);
+  }, [audioContext, recordingService, stopPlaybackLevels]);
 
   function beginEncoding() {
     const context = audioContextRef.current!;
@@ -198,14 +199,13 @@ export function useVoiceMirror(
           }
         }
 
+        const normalized = computeNormalizedLevel(chunk, 0, numFrames);
+        setLevelHistory(prev => [...prev.slice(1), normalized]);
+
         let sumSq = 0;
         for (let i = 0; i < numFrames; i++) sumSq += chunk[i] * chunk[i];
         const rms = Math.sqrt(sumSq / numFrames);
         const db = 20 * Math.log10(Math.max(rms, 1e-10));
-
-        const normalized = Math.max(0, Math.min(1, (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)));
-        setLevelHistory(prev => [...prev.slice(1), normalized]);
-
         tickStateMachine(db, totalFramesRef.current, context.sampleRate);
       },
     );
@@ -270,9 +270,11 @@ export function useVoiceMirror(
     playerNode.connect(context.destination);
     playerNode.onEnded = () => {
       playerNodeRef.current = null;
+      stopPlaybackLevels();
       void startMonitoring();
     };
     playerNode.start(0, voiceStartSecs);
+    startPlaybackLevels(audioBuffer, voiceStartSecs, setLevelHistory);
   }
 
   async function pauseMonitoring() {
@@ -281,6 +283,7 @@ export function useVoiceMirror(
       playerNodeRef.current.stop();
       playerNodeRef.current = null;
     }
+    stopPlaybackLevels();
     const recorder = audioRecorderRef.current!;
     recorder.clearOnAudioReady();
     recorder.stop();
@@ -325,6 +328,7 @@ export function useVoiceMirror(
       playerNodeRef.current.stop();
       playerNodeRef.current = null;
     }
+    stopPlaybackLevels();
 
     if (phaseRef.current !== 'paused') {
       audioRecorderRef.current?.clearOnAudioReady();
