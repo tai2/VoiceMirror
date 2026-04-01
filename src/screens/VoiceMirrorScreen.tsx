@@ -76,7 +76,7 @@ function VoiceMirrorContent() {
     settings,
   );
 
-  const { recordings, playState, addRecording, deleteRecording, togglePlay } = useRecordings(
+  const { recordings, playState, levelHistory: recordingsLevelHistory, addRecording, deleteRecording, togglePlay } = useRecordings(
     { onWillPlay: stableSuspend, onDidStop: stableResume },
     audioContext,
     recordingsRepository,
@@ -88,6 +88,9 @@ function VoiceMirrorContent() {
   suspendRef.current = suspendForListPlayback;
   resumeRef.current = resumeFromListPlayback;
 
+  const isListPlaying = playState?.isPlaying ?? false;
+  const activeLevelHistory = isListPlaying ? recordingsLevelHistory : levelHistory;
+  const meterPhase = isListPlaying ? 'playing' as const : phase;
   const isPaused = phase === "paused";
   const isRecording = phase === "recording";
 
@@ -140,9 +143,9 @@ function VoiceMirrorContent() {
       </View>
       
       <View style={styles.monitorCard}>
-        <PhaseDisplay phase={phase} />
+        <PhaseDisplay phase={meterPhase} />
         <View style={styles.meterContainer}>
-          <AudioLevelMeter history={levelHistory} phase={phase} />
+          <AudioLevelMeter history={activeLevelHistory} phase={meterPhase} />
         </View>
         <Text style={styles.hint}>
           {isPaused ? t('main.hint_paused') : t('main.hint_listening')}

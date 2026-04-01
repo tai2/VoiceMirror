@@ -3,6 +3,7 @@ import { useRecordings } from '../useRecordings';
 import { StubRecordingsRepository } from '../../__tests__/stubs/stubRecordingsRepository';
 import { StubAudioDecoderService, makeStubAudioBuffer } from '../../__tests__/stubs/stubAudioDecoderService';
 import { makeStubAudioContext, makeStubBufferSourceNode } from '../../__tests__/stubs/stubAudioContext';
+import { LEVEL_HISTORY_SIZE } from '../../constants/audio';
 import type { Recording } from '../../lib/recordings';
 
 function makeRecording(overrides?: Partial<Recording>): Recording {
@@ -262,5 +263,93 @@ describe('useRecordings — FIFO cap enforcement', () => {
     act(() => { result.current.addRecording('/tmp/new.m4a', 1000); });
 
     expect(result.current.recordings).toHaveLength(2);
+  });
+});
+
+describe('useRecordings — levelHistory', () => {
+  beforeEach(() => { jest.useFakeTimers(); });
+  afterEach(() => { jest.useRealTimers(); });
+
+  it('is exposed in the hook return value', async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.levelHistory).toBeDefined());
+    expect(result.current.levelHistory).toHaveLength(LEVEL_HISTORY_SIZE);
+    expect(result.current.levelHistory.every(v => v === 0)).toBe(true);
+  });
+
+  it('updates during playback', async () => {
+    const recording = makeRecording();
+    const repository = new StubRecordingsRepository();
+    repository.seed([recording]);
+    const decoderService = new StubAudioDecoderService();
+    decoderService.decodeAudioData.mockResolvedValue(makeStubAudioBuffer(44100, 44100, 0.5));
+    const audioContext = makeStubAudioContext();
+    const onWillPlay = jest.fn().mockResolvedValue(undefined);
+    const onDidStop = jest.fn().mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useRecordings({ onWillPlay, onDidStop }, audioContext, repository, decoderService, 0),
+    );
+
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    await act(async () => { result.current.togglePlay(recording); });
+
+    act(() => { jest.advanceTimersByTime(93 * 3); });
+
+    const hasNonZero = result.current.levelHistory.some(v => v > 0);
+    expect(hasNonZero).toBe(true);
+  });
+
+  it('resets to zeros when playback stops', async () => {
+    const recording = makeRecording();
+    const repository = new StubRecordingsRepository();
+    repository.seed([recording]);
+    const decoderService = new StubAudioDecoderService();
+    decoderService.decodeAudioData.mockResolvedValue(makeStubAudioBuffer(44100, 44100, 0.5));
+    const audioContext = makeStubAudioContext();
+    const onWillPlay = jest.fn().mockResolvedValue(undefined);
+    const onDidStop = jest.fn().mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useRecordings({ onWillPlay, onDidStop }, audioContext, repository, decoderService, 0),
+    );
+
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    await act(async () => { result.current.togglePlay(recording); });
+    act(() => { jest.advanceTimersByTime(93 * 3); });
+
+    // Stop playback
+    act(() => { result.current.togglePlay(recording); });
+
+    expect(result.current.levelHistory.every(v => v === 0)).toBe(true);
+  });
+
+  it('resets to zeros when playback ends naturally (onEnded)', async () => {
+    const recording = makeRecording();
+    const repository = new StubRecordingsRepository();
+    repository.seed([recording]);
+    const decoderService = new StubAudioDecoderService();
+    decoderService.decodeAudioData.mockResolvedValue(makeStubAudioBuffer(44100, 44100, 0.5));
+    const audioContext = makeStubAudioContext();
+    const stubSource = makeStubBufferSourceNode();
+    (audioContext.createBufferSource as jest.Mock).mockReturnValue(stubSource);
+    const onWillPlay = jest.fn().mockResolvedValue(undefined);
+    const onDidStop = jest.fn().mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useRecordings({ onWillPlay, onDidStop }, audioContext, repository, decoderService, 0),
+    );
+
+    await waitFor(() => expect(result.current.recordings).toHaveLength(1));
+
+    await act(async () => { result.current.togglePlay(recording); });
+    act(() => { jest.advanceTimersByTime(93 * 3); });
+
+    // Simulate natural end
+    act(() => { stubSource.onEnded?.(); });
+
+    expect(result.current.levelHistory.every(v => v === 0)).toBe(true);
   });
 });
