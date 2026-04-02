@@ -61,6 +61,7 @@ function VoiceMirrorContent() {
   const {
     phase,
     levelHistory,
+    currentDb,
     hasPermission,
     permissionDenied,
     recordingError,
@@ -145,7 +146,13 @@ function VoiceMirrorContent() {
       <View style={styles.monitorCard}>
         <PhaseDisplay phase={meterPhase} />
         <View style={styles.meterContainer}>
-          <AudioLevelMeter history={activeLevelHistory} phase={meterPhase} />
+          <AudioLevelMeter
+            history={activeLevelHistory}
+            phase={meterPhase}
+            currentDb={isListPlaying ? null : currentDb}
+            voiceThresholdDb={settings.voiceThresholdDb}
+            silenceThresholdDb={settings.silenceThresholdDb}
+          />
         </View>
         <Text style={styles.hint}>
           {isPaused ? t('main.hint_paused') : t('main.hint_listening')}

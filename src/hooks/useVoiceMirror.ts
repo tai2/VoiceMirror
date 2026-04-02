@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AudioContext } from 'react-native-audio-api';
 import { LEVEL_HISTORY_SIZE } from '../constants/audio';
-import { computeNormalizedLevel } from '../lib/audio';
+import { computeLevel } from '../lib/audio';
 import { usePlaybackLevelHistory } from './usePlaybackLevelHistory';
 import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types';
 import type { IAudioRecordingService, IAudioRecorder } from '../services/AudioRecordingService';
@@ -28,6 +28,7 @@ export function useVoiceMirror(
   const [levelHistory, setLevelHistory] = useState<number[]>(
     () => new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
+  const [currentDb, setCurrentDb] = useState<number | null>(null);
 
   const { startPlaybackLevels, stopPlaybackLevels } = usePlaybackLevelHistory();
 
@@ -199,13 +200,9 @@ export function useVoiceMirror(
           }
         }
 
-        const normalized = computeNormalizedLevel(chunk, 0, numFrames);
+        const { normalized, db } = computeLevel(chunk, 0, numFrames);
         setLevelHistory(prev => [...prev.slice(1), normalized]);
-
-        let sumSq = 0;
-        for (let i = 0; i < numFrames; i++) sumSq += chunk[i] * chunk[i];
-        const rms = Math.sqrt(sumSq / numFrames);
-        const db = 20 * Math.log10(Math.max(rms, 1e-10));
+        setCurrentDb(db);
         tickStateMachine(db, totalFramesRef.current, context.sampleRate);
       },
     );
@@ -219,6 +216,7 @@ export function useVoiceMirror(
     const context = audioContextRef.current!;
     const recorder = audioRecorderRef.current!;
 
+    setCurrentDb(null);
     recorder.clearOnAudioReady();
     recorder.stop();
 
@@ -306,6 +304,7 @@ export function useVoiceMirror(
     phaseRef.current = 'paused';
     setPhase('paused');
     setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
+    setCurrentDb(null);
   }
 
   async function resumeMonitoring() {
@@ -356,6 +355,7 @@ export function useVoiceMirror(
   return {
     phase,
     levelHistory,
+    currentDb,
     hasPermission,
     permissionDenied,
     recordingError,
