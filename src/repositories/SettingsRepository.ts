@@ -14,6 +14,7 @@ const STORAGE_KEYS: Record<keyof AppSettings, string> = {
 export interface ISettingsRepository {
   load(): Promise<AppSettings>;
   save<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void>;
+  resetAll(): Promise<void>;
 }
 
 export class RealSettingsRepository implements ISettingsRepository {
@@ -36,5 +37,9 @@ export class RealSettingsRepository implements ISettingsRepository {
     value: AppSettings[K],
   ): Promise<void> {
     await AsyncStorage.setItem(STORAGE_KEYS[key], String(value));
+  }
+
+  async resetAll(): Promise<void> {
+    await AsyncStorage.removeMany(Object.values(STORAGE_KEYS));
   }
 }

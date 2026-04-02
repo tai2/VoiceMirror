@@ -34,5 +34,10 @@
   "settings.unlimited": "Unlimited",
   "settings.max_recording_duration_label": "Max Recording Duration",
   "settings.max_recording_duration_description": "Maximum duration of a single recording. When the limit is reached, the recording ends automatically and playback begins. Set to 0 for unlimited.",
-  "settings.default_prefix": "default:"
+  "settings.default_prefix": "default:",
+  "settings.reset_button": "Reset to Defaults",
+  "settings.reset_confirm_title": "Reset Settings",
+  "settings.reset_confirm_message": "Are you sure you want to reset all settings to their default values?",
+  "settings.reset_confirm": "Reset",
+  "settings.reset_cancel": "Cancel"
 }
