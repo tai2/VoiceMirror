@@ -541,6 +541,68 @@ describe('useVoiceMirror — recording timeout', () => {
 });
 
 // ---------------------------------------------------------------------------
+// currentDb state
+// ---------------------------------------------------------------------------
+
+describe('useVoiceMirror — currentDb', () => {
+  it('updates currentDb on audio chunk during idle phase', async () => {
+    const { result, recordingService } = await setupWithPermission();
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeLoudChunk());
+    });
+
+    expect(result.current.currentDb).not.toBeNull();
+    expect(typeof result.current.currentDb).toBe('number');
+  });
+
+  it('updates currentDb on audio chunk during recording phase', async () => {
+    const { result, recordingService } = await setupWithPermission();
+
+    act(() => { simulateVoiceOnset(recordingService); });
+    expect(result.current.phase).toBe('recording');
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeLoudChunk());
+    });
+
+    expect(result.current.currentDb).not.toBeNull();
+  });
+
+  it('resets currentDb to null when pausing', async () => {
+    const { result, recordingService } = await setupWithPermission();
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeLoudChunk());
+    });
+    expect(result.current.currentDb).not.toBeNull();
+
+    await act(async () => { result.current.togglePause(); });
+    expect(result.current.currentDb).toBeNull();
+  });
+
+  it('resets currentDb to null when transitioning to playback', async () => {
+    const { result, recordingService } = await setupWithPermission();
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+      const minChunks = Math.ceil(MIN_RECORDING_MS / 100) + 1;
+      for (let i = 0; i < minChunks; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeLoudChunk());
+      }
+      simulateSilence(recordingService);
+    });
+
+    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    expect(result.current.currentDb).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Level history during playback
 // ---------------------------------------------------------------------------
 
