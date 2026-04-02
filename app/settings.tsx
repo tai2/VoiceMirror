@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Alert } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../src/context/SettingsProvider";
@@ -154,15 +154,44 @@ function SettingSlider({ config }: { config: SliderConfig }) {
 }
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
+  const { resetSettings } = useSettings();
+
+  const handleReset = () => {
+    Alert.alert(
+      t("settings.reset_confirm_title"),
+      t("settings.reset_confirm_message"),
+      [
+        { text: t("settings.reset_cancel"), style: "cancel" },
+        {
+          text: t("settings.reset_confirm"),
+          style: "destructive",
+          onPress: () => resetSettings(),
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {SLIDERS.map((config) => (
           <SettingSlider key={config.key} config={config} />
         ))}
+        <Pressable
+          style={({ pressed }) => [
+            styles.resetButton,
+            pressed && styles.resetButtonPressed,
+          ]}
+          onPress={handleReset}
+        >
+          <Text style={styles.resetButtonText}>
+            {t("settings.reset_button")}
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -233,8 +262,24 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
   },
-  defaultLabel: { 
-    fontSize: 11, 
+  defaultLabel: {
+    fontSize: 11,
     color: colors.textMuted,
+  },
+  resetButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  resetButtonPressed: {
+    opacity: 0.7,
+  },
+  resetButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#EF4444",
   },
 });

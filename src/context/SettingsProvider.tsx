@@ -9,6 +9,7 @@ type SettingsContextValue = {
     key: K,
     value: AppSettings[K],
   ) => void;
+  resetSettings: () => void;
 };
 
 const SettingsCtx = createContext<SettingsContextValue | null>(null);
@@ -38,8 +39,13 @@ export function SettingsProvider({
     [repository],
   );
 
+  const resetSettings = useCallback(() => {
+    setSettings(DEFAULT_SETTINGS);
+    void repository.resetAll();
+  }, [repository]);
+
   return (
-    <SettingsCtx.Provider value={{ settings, loaded, updateSetting }}>
+    <SettingsCtx.Provider value={{ settings, loaded, updateSetting, resetSettings }}>
       {children}
     </SettingsCtx.Provider>
   );

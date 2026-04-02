@@ -34,5 +34,10 @@
   "settings.unlimited": "無制限",
   "settings.max_recording_duration_label": "最大録音時間",
   "settings.max_recording_duration_description": "1回の録音の最大時間。上限に達すると録音が自動的に終了し再生が始まります。0で無制限。",
-  "settings.default_prefix": "デフォルト:"
+  "settings.default_prefix": "デフォルト:",
+  "settings.reset_button": "デフォルトに戻す",
+  "settings.reset_confirm_title": "設定のリセット",
+  "settings.reset_confirm_message": "すべての設定をデフォルト値に戻しますか？",
+  "settings.reset_confirm": "リセット",
+  "settings.reset_cancel": "キャンセル"
 }
