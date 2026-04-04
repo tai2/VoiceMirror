@@ -46,27 +46,30 @@ export function PhaseDisplay({ phase }: Props) {
       ]),
     );
 
+    const recordingScaleAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.2, duration: 500, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.0, duration: 500, useNativeDriver: true }),
+      ]),
+    );
+
     if (phase === 'idle') {
       pulseAnimation.start();
       scaleAnimation.start();
     } else if (phase === 'recording') {
       pulse.setValue(1);
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(scale, { toValue: 1.2, duration: 500, useNativeDriver: true }),
-          Animated.timing(scale, { toValue: 1.0, duration: 500, useNativeDriver: true }),
-        ]),
-      ).start();
+      recordingScaleAnimation.start();
     } else {
       pulseAnimation.stop();
       scaleAnimation.stop();
       pulse.setValue(1);
       scale.setValue(1);
     }
-    
+
     return () => {
       pulseAnimation.stop();
       scaleAnimation.stop();
+      recordingScaleAnimation.stop();
     };
   }, [phase, pulse, scale]);
 
