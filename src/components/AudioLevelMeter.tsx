@@ -1,13 +1,13 @@
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Rect, Line } from 'react-native-svg';
+import Svg, { Rect, Path, Line } from 'react-native-svg';
 import type { Phase } from '../hooks/types';
 import { dbToNormalized } from '../lib/audio';
 import { LEVEL_HISTORY_SIZE } from '../constants/audio';
 
 export const BAR_WIDTH = 4;
 const BAR_GAP = 3;
-const MAX_HEIGHT = 100;
-const MIN_HEIGHT = 4;
+const MAX_HEIGHT = 200;
+const MIN_HEIGHT = 8;
 const CONTENT_WIDTH =
   LEVEL_HISTORY_SIZE * BAR_WIDTH + (LEVEL_HISTORY_SIZE - 1) * BAR_GAP;
 
@@ -48,8 +48,8 @@ export function AudioLevelMeter({ history, phase, currentDb, voiceThresholdDb, s
   const voiceHeight = Math.max(MIN_HEIGHT, voiceNormalized * MAX_HEIGHT);
   const silenceHeight = Math.max(MIN_HEIGHT, silenceNormalized * MAX_HEIGHT);
 
-  const voiceY = (MAX_HEIGHT - voiceHeight) / 2;
-  const silenceY = (MAX_HEIGHT - silenceHeight) / 2;
+  const voiceY = MAX_HEIGHT - voiceHeight;
+  const silenceY = MAX_HEIGHT - silenceHeight;
 
   return (
     <View style={styles.container}>
@@ -58,12 +58,8 @@ export function AudioLevelMeter({ history, phase, currentDb, voiceThresholdDb, s
         height={MAX_HEIGHT}
         viewBox={`0 0 ${CONTENT_WIDTH} ${MAX_HEIGHT}`}
       >
-        <Rect
-          x={0}
-          y={MAX_HEIGHT * 0.2}
-          width={CONTENT_WIDTH}
-          height={MAX_HEIGHT * 0.6}
-          rx={40}
+        <Path
+          d={`M40,${MAX_HEIGHT * 0.4} h${CONTENT_WIDTH - 80} a40,40 0 0 1 40,40 v${MAX_HEIGHT * 0.6 - 40} h-${CONTENT_WIDTH} v-${MAX_HEIGHT * 0.6 - 40} a40,40 0 0 1 40,-40 z`}
           fill={glowColor}
         />
 
@@ -95,7 +91,7 @@ export function AudioLevelMeter({ history, phase, currentDb, voiceThresholdDb, s
           const height = Math.max(MIN_HEIGHT, normalizedValue * MAX_HEIGHT);
           const opacity = isPaused ? 0.4 : 0.5 + value * 0.5;
           const x = i * (BAR_WIDTH + BAR_GAP);
-          const y = (MAX_HEIGHT - height) / 2;
+          const y = MAX_HEIGHT - height;
 
           return (
             <Rect
