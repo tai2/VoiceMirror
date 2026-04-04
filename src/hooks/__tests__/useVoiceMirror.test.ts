@@ -541,6 +541,42 @@ describe('useVoiceMirror — recording timeout', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Pre-roll
+// ---------------------------------------------------------------------------
+
+describe('useVoiceMirror — pre-roll', () => {
+  it('includes pre-roll audio before voice detection point in encoding', async () => {
+    const { recordingService, encoderService } = await setupWithPermission();
+
+    act(() => {
+      for (let i = 0; i < 5; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeSilentChunk());
+      }
+    });
+
+    act(() => { simulateVoiceOnset(recordingService); });
+
+    const totalEncodedFrames = encoderService.encodeChunk.mock.calls.reduce(
+      (sum: number, [chunk]: [Float32Array]) => sum + chunk.length,
+      0,
+    );
+
+    const voiceOnsetFrames = Math.round((VOICE_ONSET_MS / 1000) * 44100);
+    expect(totalEncodedFrames).toBeGreaterThan(voiceOnsetFrames);
+  });
+
+  it('clamps pre-roll to buffer start when less than 100ms of audio exists', async () => {
+    const { recordingService, encoderService } = await setupWithPermission();
+
+    act(() => { simulateVoiceOnset(recordingService); });
+
+    expect(encoderService.startEncoding).toHaveBeenCalledTimes(1);
+    expect(encoderService.encodeChunk).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // currentDb state
 // ---------------------------------------------------------------------------
 

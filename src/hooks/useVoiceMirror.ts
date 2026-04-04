@@ -12,6 +12,7 @@ import type { DetectionSettings } from '../types/settings';
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
 const MAX_IDLE_BUFFER_SECS = 30;
+const PRE_ROLL_MS = 100;
 
 export function useVoiceMirror(
   onRecordingComplete: RecordingCompleteCallback,
@@ -119,7 +120,12 @@ export function useVoiceMirror(
       if (db > s.voiceThresholdDb) {
         if (voiceStartTimeRef.current === null) {
           voiceStartTimeRef.current = now;
-          voiceStartFrameRef.current = totalFrames;
+          const preRollFrames = Math.round((PRE_ROLL_MS / 1000) * sampleRate);
+          const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
+          voiceStartFrameRef.current = Math.max(
+            bufferStartFrame,
+            totalFrames - preRollFrames,
+          );
         } else if (now - voiceStartTimeRef.current >= s.voiceOnsetMs) {
           silenceStartTimeRef.current = null;
           phaseRef.current = 'recording';
