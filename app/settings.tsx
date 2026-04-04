@@ -71,7 +71,7 @@ const SLIDERS: SliderConfig[] = [
     labelKey: "settings.silence_duration_label",
     descriptionKey: "settings.silence_duration_description",
     min: 100,
-    max: 3000,
+    max: 10000,
     step: 100,
     unit: "ms",
   },

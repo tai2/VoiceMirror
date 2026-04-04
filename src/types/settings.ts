@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   voiceThresholdDb: -35,
   voiceOnsetMs: 250,
   silenceThresholdDb: -45,
-  silenceDurationMs: 500,
+  silenceDurationMs: 1000,
   minRecordingMs: 500,
   maxRecordings: 20,
   maxRecordingMs: 60000,
