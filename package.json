@@ -41,7 +41,8 @@
     "react-i18next": "^16.6.6",
     "react-native": "0.83.2",
     "react-native-audio-api": "^0.11.7",
-    "react-native-gesture-handler": "~2.30.0"
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-svg": "15.15.3"
   },
   "devDependencies": {
     "@expo/config-plugins": "^55.0.7",
@@ -80,7 +81,7 @@
       "/e2e/"
     ],
     "transformIgnorePatterns": [
-      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|react-native-audio-api))"
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|react-native-audio-api|react-native-svg))"
     ]
   },
   "private": true

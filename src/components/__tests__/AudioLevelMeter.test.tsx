@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react-native';
-import { View } from 'react-native';
-import { AudioLevelMeter } from '../AudioLevelMeter';
+import { Rect, Line } from 'react-native-svg';
+import { AudioLevelMeter, BAR_WIDTH } from '../AudioLevelMeter';
 import { LEVEL_HISTORY_SIZE } from '../../constants/audio';
 import type { Phase } from '../../hooks/types';
 
@@ -19,8 +19,8 @@ describe('AudioLevelMeter', () => {
     const { UNSAFE_getAllByType } = render(
       <AudioLevelMeter {...defaultProps} />,
     );
-    const bars = UNSAFE_getAllByType(View).filter(
-      (el) => el.props.style && JSON.stringify(el.props.style).includes('"width":4'),
+    const bars = UNSAFE_getAllByType(Rect).filter(
+      (el) => el.props.width === BAR_WIDTH,
     );
     expect(bars).toHaveLength(LEVEL_HISTORY_SIZE);
   });
@@ -31,27 +31,33 @@ describe('AudioLevelMeter', () => {
   });
 
   it('renders guide lines during idle phase', () => {
-    const { toJSON } = render(<AudioLevelMeter {...defaultProps} phase="idle" />);
-    const json = JSON.stringify(toJSON());
-    expect(json).toContain('dashed');
+    const { UNSAFE_getAllByType } = render(
+      <AudioLevelMeter {...defaultProps} phase="idle" />,
+    );
+    const lines = UNSAFE_getAllByType(Line);
+    expect(lines).toHaveLength(2);
   });
 
   it('renders guide lines during recording phase', () => {
-    const { toJSON } = render(<AudioLevelMeter {...defaultProps} phase="recording" />);
-    const json = JSON.stringify(toJSON());
-    expect(json).toContain('dashed');
+    const { UNSAFE_getAllByType } = render(
+      <AudioLevelMeter {...defaultProps} phase="recording" />,
+    );
+    const lines = UNSAFE_getAllByType(Line);
+    expect(lines).toHaveLength(2);
   });
 
   it('hides guide lines during playing phase', () => {
-    const { toJSON } = render(<AudioLevelMeter {...defaultProps} phase="playing" />);
-    const json = JSON.stringify(toJSON());
-    expect(json).not.toContain('dashed');
+    const { UNSAFE_getAllByType } = render(
+      <AudioLevelMeter {...defaultProps} phase="playing" />,
+    );
+    expect(() => UNSAFE_getAllByType(Line)).toThrow();
   });
 
   it('hides guide lines during paused phase', () => {
-    const { toJSON } = render(<AudioLevelMeter {...defaultProps} phase="paused" />);
-    const json = JSON.stringify(toJSON());
-    expect(json).not.toContain('dashed');
+    const { UNSAFE_getAllByType } = render(
+      <AudioLevelMeter {...defaultProps} phase="paused" />,
+    );
+    expect(() => UNSAFE_getAllByType(Line)).toThrow();
   });
 
   it('shows dB label when currentDb is provided and phase is idle', () => {
