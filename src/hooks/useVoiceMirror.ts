@@ -171,6 +171,7 @@ export function useVoiceMirror(
     setRecordingError(null);
 
     await recordingService.setAudioSessionActivity(true);
+    await context.resume();
     recorder.start();
 
     recorder.onAudioReady(
@@ -300,6 +301,7 @@ export function useVoiceMirror(
       repository.deleteFile(filePath);
     }
 
+    await audioContextRef.current?.suspend();
     await recordingService.setAudioSessionActivity(false);
     phaseRef.current = 'paused';
     setPhase('paused');
