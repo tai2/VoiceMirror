@@ -1,11 +1,15 @@
 import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Rect, Line } from 'react-native-svg';
 import type { Phase } from '../hooks/types';
 import { dbToNormalized } from '../lib/audio';
+import { LEVEL_HISTORY_SIZE } from '../constants/audio';
 
-const BAR_WIDTH = 4;
+export const BAR_WIDTH = 4;
 const BAR_GAP = 3;
 const MAX_HEIGHT = 100;
 const MIN_HEIGHT = 4;
+const CONTENT_WIDTH =
+  LEVEL_HISTORY_SIZE * BAR_WIDTH + (LEVEL_HISTORY_SIZE - 1) * BAR_GAP;
 
 const PHASE_COLOR: Record<Phase, string> = {
   idle: '#3B82F6',
@@ -44,49 +48,69 @@ export function AudioLevelMeter({ history, phase, currentDb, voiceThresholdDb, s
   const voiceHeight = Math.max(MIN_HEIGHT, voiceNormalized * MAX_HEIGHT);
   const silenceHeight = Math.max(MIN_HEIGHT, silenceNormalized * MAX_HEIGHT);
 
-  const voiceTop = (MAX_HEIGHT - voiceHeight) / 2;
-  const silenceTop = (MAX_HEIGHT - silenceHeight) / 2;
+  const voiceY = (MAX_HEIGHT - voiceHeight) / 2;
+  const silenceY = (MAX_HEIGHT - silenceHeight) / 2;
 
   return (
     <View style={styles.container}>
-      <View style={[styles.glowBackground, { backgroundColor: glowColor }]} />
+      <Svg
+        width="100%"
+        height={MAX_HEIGHT}
+        viewBox={`0 0 ${CONTENT_WIDTH} ${MAX_HEIGHT}`}
+      >
+        <Rect
+          x={0}
+          y={MAX_HEIGHT * 0.2}
+          width={CONTENT_WIDTH}
+          height={MAX_HEIGHT * 0.6}
+          rx={40}
+          fill={glowColor}
+        />
 
-      {showGuides && (
-        <>
-          <View
-            style={[
-              styles.guideLine,
-              { top: voiceTop, borderColor: VOICE_THRESHOLD_COLOR },
-            ]}
-          />
-          <View
-            style={[
-              styles.guideLine,
-              { top: silenceTop, borderColor: SILENCE_THRESHOLD_COLOR },
-            ]}
-          />
-        </>
-      )}
+        {showGuides && (
+          <>
+            <Line
+              x1={0}
+              y1={voiceY}
+              x2={CONTENT_WIDTH}
+              y2={voiceY}
+              stroke={VOICE_THRESHOLD_COLOR}
+              strokeWidth={1}
+              strokeDasharray="4,4"
+            />
+            <Line
+              x1={0}
+              y1={silenceY}
+              x2={CONTENT_WIDTH}
+              y2={silenceY}
+              stroke={SILENCE_THRESHOLD_COLOR}
+              strokeWidth={1}
+              strokeDasharray="4,4"
+            />
+          </>
+        )}
 
-      {history.map((value, i) => {
-        const normalizedValue = isPaused ? 0.1 : value;
-        const height = Math.max(MIN_HEIGHT, normalizedValue * MAX_HEIGHT);
-        const opacity = isPaused ? 0.4 : 0.5 + (value * 0.5);
+        {history.map((value, i) => {
+          const normalizedValue = isPaused ? 0.1 : value;
+          const height = Math.max(MIN_HEIGHT, normalizedValue * MAX_HEIGHT);
+          const opacity = isPaused ? 0.4 : 0.5 + value * 0.5;
+          const x = i * (BAR_WIDTH + BAR_GAP);
+          const y = (MAX_HEIGHT - height) / 2;
 
-        return (
-          <View
-            key={i}
-            style={[
-              styles.bar,
-              {
-                backgroundColor: color,
-                height,
-                opacity,
-              },
-            ]}
-          />
-        );
-      })}
+          return (
+            <Rect
+              key={i}
+              x={x}
+              y={y}
+              width={BAR_WIDTH}
+              height={height}
+              rx={3}
+              fill={color}
+              opacity={opacity}
+            />
+          );
+        })}
+      </Svg>
 
       {showGuides && currentDb !== null && (
         <View style={styles.dbLabelContainer}>
@@ -101,34 +125,10 @@ export function AudioLevelMeter({ history, phase, currentDb, voiceThresholdDb, s
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     height: MAX_HEIGHT,
-    gap: BAR_GAP,
     paddingHorizontal: 16,
     position: 'relative',
-  },
-  glowBackground: {
-    position: 'absolute',
-    top: '20%',
-    left: 0,
-    right: 0,
-    bottom: '20%',
-    borderRadius: 40,
-  },
-  bar: {
-    width: BAR_WIDTH,
-    borderRadius: 3,
-  },
-  guideLine: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    height: 0,
-    borderTopWidth: 1,
-    borderStyle: 'dashed',
-    zIndex: 1,
+    alignSelf: 'stretch',
   },
   dbLabelContainer: {
     position: 'absolute',
