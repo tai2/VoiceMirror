@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Pressable, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  Pressable,
+  Alert,
+} from "react-native";
 import Slider from "@react-native-community/slider";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../src/context/SettingsProvider";
@@ -62,8 +70,8 @@ const SLIDERS: SliderConfig[] = [
     key: "silenceDurationMs",
     labelKey: "settings.silence_duration_label",
     descriptionKey: "settings.silence_duration_description",
-    min: 300,
-    max: 5000,
+    min: 100,
+    max: 3000,
     step: 100,
     unit: "ms",
   },
@@ -81,7 +89,7 @@ const SLIDERS: SliderConfig[] = [
     labelKey: "settings.max_recordings_label",
     descriptionKey: "settings.max_recordings_description",
     min: 0,
-    max: 200,
+    max: 100,
     step: 5,
     unit: "",
     displayValue: (v, t) => (v === 0 ? t("settings.unlimited") : String(v)),
@@ -198,13 +206,13 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { 
-    flex: 1, 
+  root: {
+    flex: 1,
     backgroundColor: colors.background,
   },
-  scrollContent: { 
-    padding: 20, 
-    gap: 16, 
+  scrollContent: {
+    padding: 20,
+    gap: 16,
     paddingBottom: 40,
   },
   sliderCard: {
@@ -220,27 +228,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  sliderLabel: { 
-    fontSize: 15, 
-    fontWeight: "600", 
+  sliderLabel: {
+    fontSize: 15,
+    fontWeight: "600",
     color: colors.textPrimary,
     flex: 1,
   },
   valueBadge: {
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    backgroundColor: "rgba(59, 130, 246, 0.15)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
-  sliderValue: { 
-    fontSize: 14, 
-    fontWeight: "700", 
+  sliderValue: {
+    fontSize: 14,
+    fontWeight: "700",
     color: colors.accent,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
-  sliderDescription: { 
-    fontSize: 13, 
-    color: colors.textMuted, 
+  sliderDescription: {
+    fontSize: 13,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   sliderContainer: {
@@ -251,10 +259,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  rangeLabel: { 
-    fontSize: 11, 
+  rangeLabel: {
+    fontSize: 11,
     color: colors.textMuted,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   defaultBadge: {
     backgroundColor: colors.surfaceElevated,
