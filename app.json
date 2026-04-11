@@ -5,12 +5,12 @@
     "scheme": "voicemirror",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A0A0B"
     },
     "locales": {
       "en": "./languages/en.json",
@@ -29,15 +29,10 @@
     "android": {
       "package": "net.tai2.voicemirror",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#0A0A0B",
+        "foregroundImage": "./assets/images/icon_adaptive.png"
       },
       "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
@@ -46,6 +41,7 @@
     },
     "plugins": [
       "./plugins/withCleartextTraffic",
+      "./plugins/withAsyncStorageLocalRepo",
       [
         "react-native-audio-api",
         {
