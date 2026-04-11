@@ -24,7 +24,7 @@ const colors = {
   border: "#2A2A2E",
   textPrimary: "#FAFAFA",
   textSecondary: "#A1A1AA",
-  accent: "#3B82F6",
+  accent: "#2DD4BF",
 };
 
 const isE2E = process.env.EXPO_PUBLIC_E2E === "1";

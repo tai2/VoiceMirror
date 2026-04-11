@@ -11,16 +11,16 @@ const PHASE_I18N_KEY: Record<Phase, string> = {
 };
 
 const PHASE_COLOR: Record<Phase, string> = {
-  idle: '#3B82F6',
-  recording: '#EF4444',
-  playing: '#22C55E',
+  idle: '#2DD4BF',
+  recording: '#F87171',
+  playing: '#5EEAD4',
   paused: '#71717A',
 };
 
 const PHASE_BG: Record<Phase, string> = {
-  idle: 'rgba(59, 130, 246, 0.15)',
-  recording: 'rgba(239, 68, 68, 0.15)',
-  playing: 'rgba(34, 197, 94, 0.15)',
+  idle: 'rgba(45, 212, 191, 0.15)',
+  recording: 'rgba(248, 113, 113, 0.15)',
+  playing: 'rgba(94, 234, 212, 0.15)',
   paused: 'rgba(113, 113, 122, 0.15)',
 };
 

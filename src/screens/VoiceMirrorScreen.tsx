@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, SafeAreaView, Pressable } from "react-native";
 import { useRef, useCallback } from "react";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { AntDesign } from "@expo/vector-icons";
 import { useVoiceMirror } from "../hooks/useVoiceMirror";
 import { useRecordings } from "../hooks/useRecordings";
 import { AudioLevelMeter } from "../components/AudioLevelMeter";
@@ -23,10 +24,10 @@ const colors = {
   textPrimary: "#FAFAFA",
   textSecondary: "#A1A1AA",
   textMuted: "#71717A",
-  accent: "#3B82F6",
-  accentHover: "#2563EB",
-  recording: "#EF4444",
-  playing: "#22C55E",
+  accent: "#2DD4BF",
+  accentHover: "#14B8A6",
+  recording: "#F87171",
+  playing: "#5EEAD4",
   paused: "#71717A",
 };
 
@@ -95,6 +96,14 @@ function VoiceMirrorContent() {
   const isPaused = phase === "paused";
   const isRecording = phase === "recording";
 
+  const stateColor = isPaused
+    ? colors.paused
+    : isRecording
+    ? colors.recording
+    : isListPlaying
+    ? colors.playing
+    : colors.accent;
+
   if (permissionDenied) {
     return (
       <SafeAreaView style={styles.root}>
@@ -138,14 +147,14 @@ function VoiceMirrorContent() {
           ]}
         >
           <View style={styles.settingsIconContainer}>
-            <Text style={styles.settingsIcon}>&#x2699;</Text>
+            <AntDesign name="setting" size={20} color={colors.textSecondary} />
           </View>
         </Pressable>
       </View>
       
-      <View style={styles.monitorCard}>
+      <View style={[styles.monitorCard, { borderColor: stateColor }]}>
         <PhaseDisplay phase={meterPhase} />
-        <View style={styles.meterContainer}>
+        <View style={[styles.waveformBox, { borderColor: `${stateColor}33` }]}>
           <AudioLevelMeter
             history={activeLevelHistory}
             phase={meterPhase}
@@ -168,15 +177,11 @@ function VoiceMirrorContent() {
           onPress={togglePause}
           style={({ pressed }) => [
             styles.pauseButton,
-            isPaused && styles.pauseButtonActive,
-            isRecording && styles.pauseButtonRecording,
+            { borderColor: stateColor },
             pressed && styles.pauseButtonPressed,
           ]}
         >
-          <Text style={[
-            styles.pauseButtonLabel,
-            isPaused && styles.pauseButtonLabelActive,
-          ]}>
+          <Text style={[styles.pauseButtonLabel, { color: stateColor }]}>
             {isPaused ? t('main.button_resume') : t('main.button_pause')}
           </Text>
         </Pressable>
@@ -244,10 +249,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  settingsIcon: {
-    fontSize: 20,
-    color: colors.textSecondary,
-  },
   center: {
     flex: 1,
     alignItems: "center",
@@ -268,18 +269,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 20,
     marginTop: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    gap: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    gap: 20,
     backgroundColor: colors.surface,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  meterContainer: {
+  waveformBox: {
     width: "100%",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginTop: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    borderRadius: 16,
+    borderWidth: 1,
   },
   hint: {
     color: colors.textMuted,
@@ -288,34 +294,22 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   pauseButton: {
-    paddingHorizontal: 40,
-    paddingVertical: 16,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceElevated,
+    paddingHorizontal: 48,
+    paddingVertical: 14,
+    borderRadius: 999,
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: 160,
+    minWidth: 180,
     alignItems: "center",
   },
-  pauseButtonActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  pauseButtonRecording: {
-    borderColor: colors.recording,
-  },
   pauseButtonPressed: {
-    opacity: 0.8,
+    opacity: 0.7,
     transform: [{ scale: 0.98 }],
   },
   pauseButtonLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textSecondary,
     letterSpacing: 0.3,
-  },
-  pauseButtonLabelActive: {
-    color: colors.textPrimary,
   },
   recordingsSection: {
     flex: 1,
@@ -362,7 +356,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    backgroundColor: "rgba(248, 113, 113, 0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -372,7 +366,7 @@ const styles = StyleSheet.create({
     color: colors.recording,
   },
   errorBadge: {
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    backgroundColor: "rgba(248, 113, 113, 0.15)",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,

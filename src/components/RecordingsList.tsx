@@ -11,7 +11,7 @@ const colors = {
   surfaceElevated: '#1C1C1F',
   border: '#2A2A2E',
   textMuted: '#71717A',
-  accent: '#3B82F6',
+  accent: '#2DD4BF',
 };
 
 type Props = {
