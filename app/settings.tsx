@@ -22,8 +22,8 @@ const colors = {
   textPrimary: "#FAFAFA",
   textSecondary: "#A1A1AA",
   textMuted: "#71717A",
-  accent: "#3B82F6",
-  accentMuted: "#2563EB",
+  accent: "#2DD4BF",
+  accentMuted: "#14B8A6",
 };
 
 type SliderConfig = {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   valueBadge: {
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
+    backgroundColor: "rgba(45, 212, 191, 0.15)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,

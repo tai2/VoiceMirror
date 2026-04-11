@@ -14,10 +14,10 @@ const colors = {
   textPrimary: '#FAFAFA',
   textSecondary: '#A1A1AA',
   textMuted: '#71717A',
-  accent: '#3B82F6',
-  accentLight: 'rgba(59, 130, 246, 0.15)',
-  playing: '#22C55E',
-  playingLight: 'rgba(34, 197, 94, 0.15)',
+  accent: '#2DD4BF',
+  accentLight: 'rgba(45, 212, 191, 0.15)',
+  playing: '#5EEAD4',
+  playingLight: 'rgba(94, 234, 212, 0.15)',
   danger: '#EF4444',
 };
 
