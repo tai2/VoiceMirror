@@ -25,3 +25,7 @@ VoiceMirror is a React Native/Expo app that implements a voice mirror: it listen
   allows us to focus on testing application logic.
 - On UI components, services should be injected through context provider and its hook. This allows us to switch it with
   stub in unit testing.
+
+## Native development
+
+- Stick to CNG. Don't touch native projects directly.
