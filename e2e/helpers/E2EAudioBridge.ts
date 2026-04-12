@@ -45,7 +45,9 @@ export class E2EAudioBridge {
       this.client = ws;
       ws.on("close", () => {
         console.log("[E2EAudioBridge] client disconnected");
-        this.client = null;
+        if (this.client === ws) {
+          this.client = null;
+        }
       });
     });
     this.wss.on("error", (e) => {

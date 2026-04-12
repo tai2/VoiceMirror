@@ -238,7 +238,10 @@ export function useVoiceMirror(
     let durationMs = 0;
     if (filePath && !encoderFailedRef.current) {
       try {
-        durationMs = await encoderService.stopEncoding();
+        durationMs = await Promise.race([
+          encoderService.stopEncoding(),
+          new Promise<number>((_, reject) => setTimeout(() => reject(new Error('stopEncoding timed out')), 5000)),
+        ]);
         if (durationMs === 0) {
           console.error(`[AudioEncoder] stopEncoding returned 0 for ${filePath}`);
         }
@@ -273,11 +276,20 @@ export function useVoiceMirror(
     playerNodeRef.current = playerNode;
     playerNode.buffer = audioBuffer;
     playerNode.connect(context.destination);
-    playerNode.onEnded = () => {
+
+    const playbackDurationSecs = audioBuffer.duration - voiceStartSecs;
+    let ended = false;
+    const onPlaybackEnd = () => {
+      if (ended) return;
+      ended = true;
       playerNodeRef.current = null;
       stopPlaybackLevels();
       void startMonitoring();
     };
+    playerNode.onEnded = onPlaybackEnd;
+    // Fallback: if onEnded doesn't fire, force transition after expected duration
+    setTimeout(onPlaybackEnd, (playbackDurationSecs + 1) * 1000);
+
     playerNode.start(0, voiceStartSecs);
     startPlaybackLevels(audioBuffer, voiceStartSecs, setLevelHistory);
   }

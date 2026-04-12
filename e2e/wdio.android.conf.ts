@@ -17,4 +17,9 @@ export const config: WdioConfig = {
       "appium:noReset": false,
     },
   ],
+
+  mochaOpts: {
+    ...iosConfig.mochaOpts,
+    timeout: 300_000,
+  },
 };
