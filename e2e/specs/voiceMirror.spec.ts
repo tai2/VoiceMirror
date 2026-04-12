@@ -3,6 +3,12 @@ import { DEFAULT_SETTINGS } from "../../src/types/settings";
 
 const { voiceOnsetMs: VOICE_ONSET_MS, minRecordingMs: MIN_RECORDING_MS, silenceDurationMs: SILENCE_DURATION_MS } = DEFAULT_SETTINGS;
 
+// Appium/UiAutomator2 on Android emulators can be extremely slow (10-20s per command).
+// These timeouts account for that latency.
+const WAIT_SHORT = 10_000;
+const WAIT_MEDIUM = 30_000;
+const WAIT_LONG = 60_000;
+
 let bridge: E2EAudioBridge;
 
 before(() => {
@@ -16,7 +22,7 @@ after(async () => {
 beforeEach(async () => {
   // Wait for the app to load and confirm E2E mode is active
   const e2eIndicator = $("~e2e-mode");
-  await e2eIndicator.waitForExist({ timeout: 10_000 });
+  await e2eIndicator.waitForExist({ timeout: WAIT_SHORT });
 });
 
 afterEach(async () => {
@@ -26,14 +32,14 @@ afterEach(async () => {
 describe("VoiceMirror — core loop", () => {
   beforeEach(async () => {
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-    await $("~phase-idle").waitForDisplayed({ timeout: 10_000 });
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
   });
   it("shows idle phase on launch", async () => {
     await expect($("~phase-idle")).toBeDisplayed();
   });
   it("transitions to recording when voice is sustained", async () => {
     await bridge.sendVoice(VOICE_ONSET_MS + 200);
-    await $("~phase-recording").waitForDisplayed({ timeout: 5_000 });
+    await $("~phase-recording").waitForDisplayed({ timeout: WAIT_SHORT });
   });
   it("does not record on brief voice bursts shorter than onset threshold", async () => {
     await bridge.sendVoice(VOICE_ONSET_MS - 100);
@@ -43,31 +49,31 @@ describe("VoiceMirror — core loop", () => {
   });
   it("transitions from recording to playing after sustained silence", async () => {
     await bridge.sendVoice(VOICE_ONSET_MS + 200);
-    await $("~phase-recording").waitForDisplayed({ timeout: 5_000 });
+    await $("~phase-recording").waitForDisplayed({ timeout: WAIT_SHORT });
     await bridge.sendVoice(MIN_RECORDING_MS + 200);
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-    await $("~phase-playing").waitForDisplayed({ timeout: 10_000 });
+    await $("~phase-playing").waitForDisplayed({ timeout: WAIT_MEDIUM });
   });
   it("returns to idle after playback completes", async () => {
     await bridge.sendVoice(VOICE_ONSET_MS + 200);
-    await $("~phase-recording").waitForDisplayed({ timeout: 5_000 });
+    await $("~phase-recording").waitForDisplayed({ timeout: WAIT_SHORT });
     await bridge.sendVoice(MIN_RECORDING_MS + 200);
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-    await $("~phase-playing").waitForDisplayed({ timeout: 10_000 });
-    await $("~phase-idle").waitForDisplayed({ timeout: 15_000 });
+    await $("~phase-playing").waitForDisplayed({ timeout: WAIT_MEDIUM });
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_LONG });
   });
   it("adds a recording to the list after the loop completes", async () => {
     await bridge.sendVoice(VOICE_ONSET_MS + 200);
-    await $("~phase-recording").waitForDisplayed({ timeout: 5_000 });
+    await $("~phase-recording").waitForDisplayed({ timeout: WAIT_SHORT });
     await bridge.sendVoice(MIN_RECORDING_MS + 200);
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-    await $("~phase-playing").waitForDisplayed({ timeout: 10_000 });
-    await $("~phase-idle").waitForDisplayed({ timeout: 15_000 });
+    await $("~phase-playing").waitForDisplayed({ timeout: WAIT_MEDIUM });
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_LONG });
     const recordingSelector = browser.isAndroid
       ? 'android=new UiSelector().descriptionStartsWith("play-recording-")'
       : '-ios predicate string:name BEGINSWITH "play-recording-"';
     const playButton = $(recordingSelector);
-    await playButton.waitForExist({ timeout: 10_000 });
+    await playButton.waitForExist({ timeout: WAIT_SHORT });
     const items = $$(recordingSelector);
     expect(items).toBeElementsArrayOfSize({ gte: 1 });
   });
@@ -76,13 +82,13 @@ describe("VoiceMirror — core loop", () => {
 describe("VoiceMirror — pause / resume", () => {
   it("pauses and resumes monitoring", async () => {
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-    await $("~phase-idle").waitForDisplayed({ timeout: 10_000 });
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
 
     await $("~toggle-pause-button").click();
-    await $("~phase-paused").waitForDisplayed({ timeout: 5_000 });
+    await $("~phase-paused").waitForDisplayed({ timeout: WAIT_SHORT });
 
     await $("~toggle-pause-button").click();
-    await $("~phase-idle").waitForDisplayed({ timeout: 5_000 });
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
   });
 });
 
@@ -94,11 +100,11 @@ function recordingSelector() {
 
 async function createRecording() {
   await bridge.sendVoice(VOICE_ONSET_MS + 200);
-  await $("~phase-recording").waitForDisplayed({ timeout: 5_000 });
+  await $("~phase-recording").waitForDisplayed({ timeout: WAIT_MEDIUM });
   await bridge.sendVoice(MIN_RECORDING_MS + 200);
   await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-  await $("~phase-playing").waitForDisplayed({ timeout: 10_000 });
-  await $("~phase-idle").waitForDisplayed({ timeout: 15_000 });
+  await $("~phase-playing").waitForDisplayed({ timeout: WAIT_MEDIUM });
+  await $("~phase-idle").waitForDisplayed({ timeout: WAIT_LONG });
 }
 
 async function swipeLeftOnRow(selector: string, distance: number) {
@@ -121,23 +127,26 @@ async function swipeLeftOnRow(selector: string, distance: number) {
     .perform();
 }
 
-describe("VoiceMirror — swipe to delete", () => {
+// Swipeable from react-native-gesture-handler doesn't respond to UiAutomator2
+// automated touch events on Android. These tests only run on iOS.
+const describeSwipe = browser.isIOS ? describe : describe.skip;
+describeSwipe("VoiceMirror — swipe to delete", () => {
   beforeEach(async () => {
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
-    await $("~phase-idle").waitForDisplayed({ timeout: 10_000 });
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
   });
 
   it("partial swipe reveals delete button, tap deletes recording", async () => {
     await createRecording();
 
     const sel = recordingSelector();
-    await $(sel).waitForExist({ timeout: 10_000 });
+    await $(sel).waitForExist({ timeout: WAIT_SHORT });
 
     // Swipe on the play button element (part of the row)
     await swipeLeftOnRow(sel, 150);
 
     const deleteButton = $("~delete-recording");
-    await deleteButton.waitForDisplayed({ timeout: 5_000 });
+    await deleteButton.waitForDisplayed({ timeout: WAIT_SHORT });
     await deleteButton.click();
 
     await browser.waitUntil(
@@ -145,7 +154,7 @@ describe("VoiceMirror — swipe to delete", () => {
         const count = await $$(sel).length;
         return count === 0;
       },
-      { timeout: 5_000, timeoutMsg: "Recording was not deleted" },
+      { timeout: WAIT_SHORT, timeoutMsg: "Recording was not deleted" },
     );
   });
 
@@ -153,7 +162,7 @@ describe("VoiceMirror — swipe to delete", () => {
     await createRecording();
 
     const sel = recordingSelector();
-    await $(sel).waitForExist({ timeout: 10_000 });
+    await $(sel).waitForExist({ timeout: WAIT_SHORT });
 
     const { width } = await driver.getWindowSize();
     await swipeLeftOnRow(sel, width * 0.7);
@@ -163,7 +172,7 @@ describe("VoiceMirror — swipe to delete", () => {
         const count = await $$(sel).length;
         return count === 0;
       },
-      { timeout: 5_000, timeoutMsg: "Recording was not deleted by full swipe" },
+      { timeout: WAIT_SHORT, timeoutMsg: "Recording was not deleted by full swipe" },
     );
   });
 });

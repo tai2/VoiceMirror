@@ -16,6 +16,7 @@ VoiceMirror is a React Native/Expo app that implements a voice mirror: it listen
   - Don't disable rule unless explicitly asked by developer
 - `pnpm test:ci` to run unit tests
 - `pnpm e2e:ios` and `pnpm e2e:android` to run E2E tests
+- `pnpm e2e:{ios,android} --mochaOpts.grep 'Test case title'` to run specific test cases of E2E tests
 
 ## Design and unit testing
 

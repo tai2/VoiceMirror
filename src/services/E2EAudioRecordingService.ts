@@ -15,12 +15,29 @@ const WS_PORT = 9876;
 
 const RECONNECT_DELAY_MS = 500;
 const CONNECTION_TIMEOUT_MS = 3000;
+const E2E_BRIDGE_SAMPLE_RATE = 48000;
 
 export type E2EConnectionStatus = "disconnected" | "connecting" | "connected";
+
+function resample(input: Float32Array, fromRate: number, toRate: number): Float32Array {
+  if (fromRate === toRate) return input;
+  const ratio = toRate / fromRate;
+  const outLen = Math.round(input.length * ratio);
+  const output = new Float32Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const srcIdx = i / ratio;
+    const lo = Math.floor(srcIdx);
+    const hi = Math.min(lo + 1, input.length - 1);
+    const frac = srcIdx - lo;
+    output[i] = input[lo] * (1 - frac) + input[hi] * frac;
+  }
+  return output;
+}
 
 class E2EAudioRecorder implements IAudioRecorder {
   private ws: WebSocket | null = null;
   private callback: ((event: AudioChunkEvent) => void) | null = null;
+  private targetSampleRate = E2E_BRIDGE_SAMPLE_RATE;
   private stopped = true;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private connectAttempts = 0;
@@ -90,7 +107,8 @@ class E2EAudioRecorder implements IAudioRecorder {
       } else {
         return;
       }
-      const samples = new Float32Array(buffer);
+      const raw = new Float32Array(buffer);
+      const samples = resample(raw, E2E_BRIDGE_SAMPLE_RATE, this.targetSampleRate);
       this.callback({ chunk: samples, numFrames: samples.length });
     };
 
@@ -131,9 +149,10 @@ class E2EAudioRecorder implements IAudioRecorder {
   }
 
   onAudioReady(
-    _config: AudioRecorderCallbackOptions,
+    config: AudioRecorderCallbackOptions,
     callback: (event: AudioChunkEvent) => void,
   ): void {
+    this.targetSampleRate = config.sampleRate;
     this.callback = callback;
   }
 
