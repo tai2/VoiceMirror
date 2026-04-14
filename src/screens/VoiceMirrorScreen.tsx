@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, SafeAreaView, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  Pressable,
+  Button,
+} from "react-native";
 import { useRef, useCallback } from "react";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -78,7 +85,14 @@ function VoiceMirrorContent() {
     settings,
   );
 
-  const { recordings, playState, levelHistory: recordingsLevelHistory, addRecording, deleteRecording, togglePlay } = useRecordings(
+  const {
+    recordings,
+    playState,
+    levelHistory: recordingsLevelHistory,
+    addRecording,
+    deleteRecording,
+    togglePlay,
+  } = useRecordings(
     { onWillPlay: stableSuspend, onDidStop: stableResume },
     audioContext,
     recordingsRepository,
@@ -91,18 +105,20 @@ function VoiceMirrorContent() {
   resumeRef.current = resumeFromListPlayback;
 
   const isListPlaying = playState?.isPlaying ?? false;
-  const activeLevelHistory = isListPlaying ? recordingsLevelHistory : levelHistory;
-  const meterPhase = isListPlaying ? 'playing' as const : phase;
+  const activeLevelHistory = isListPlaying
+    ? recordingsLevelHistory
+    : levelHistory;
+  const meterPhase = isListPlaying ? ("playing" as const) : phase;
   const isPaused = phase === "paused";
   const isRecording = phase === "recording";
 
   const stateColor = isPaused
     ? colors.paused
     : isRecording
-    ? colors.recording
-    : isListPlaying
-    ? colors.playing
-    : colors.accent;
+      ? colors.recording
+      : isListPlaying
+        ? colors.playing
+        : colors.accent;
 
   if (permissionDenied) {
     return (
@@ -112,10 +128,8 @@ function VoiceMirrorContent() {
             <View style={styles.errorIconContainer}>
               <Text style={styles.errorIcon}>!</Text>
             </View>
-            <Text style={styles.errorTitle}>{t('main.error_title')}</Text>
-            <Text style={styles.errorBody}>
-              {t('main.error_body')}
-            </Text>
+            <Text style={styles.errorTitle}>{t("main.error_title")}</Text>
+            <Text style={styles.errorBody}>{t("main.error_body")}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -128,7 +142,7 @@ function VoiceMirrorContent() {
         <View style={styles.center}>
           <View style={styles.loadingContainer}>
             <View style={styles.loadingDot} />
-            <Text style={styles.hint}>{t('main.hint_requesting')}</Text>
+            <Text style={styles.hint}>{t("main.hint_requesting")}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -151,7 +165,6 @@ function VoiceMirrorContent() {
           </View>
         </Pressable>
       </View>
-      
       <View style={[styles.monitorCard, { borderColor: stateColor }]}>
         <PhaseDisplay phase={meterPhase} />
         <View style={[styles.waveformBox, { borderColor: `${stateColor}33` }]}>
@@ -164,11 +177,13 @@ function VoiceMirrorContent() {
           />
         </View>
         <Text style={styles.hint}>
-          {isPaused ? t('main.hint_paused') : t('main.hint_listening')}
+          {isPaused ? t("main.hint_paused") : t("main.hint_listening")}
         </Text>
         {recordingError && (
           <View style={styles.errorBadge}>
-            <Text style={styles.recordingError}>{t(`main.${recordingError}`)}</Text>
+            <Text style={styles.recordingError}>
+              {t(`main.${recordingError}`)}
+            </Text>
           </View>
         )}
         <Pressable
@@ -182,14 +197,16 @@ function VoiceMirrorContent() {
           ]}
         >
           <Text style={[styles.pauseButtonLabel, { color: stateColor }]}>
-            {isPaused ? t('main.button_resume') : t('main.button_pause')}
+            {isPaused ? t("main.button_resume") : t("main.button_pause")}
           </Text>
         </Pressable>
       </View>
 
       <View style={styles.recordingsSection}>
         <View style={styles.recordingsHeader}>
-          <Text style={styles.recordingsTitle}>{t('recordings.title') || 'Recordings'}</Text>
+          <Text style={styles.recordingsTitle}>
+            {t("recordings.title") || "Recordings"}
+          </Text>
           <View style={styles.recordingsCountBadge}>
             <Text style={styles.recordingsCount}>{recordings.length}</Text>
           </View>
