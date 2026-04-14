@@ -1,10 +1,10 @@
-import { File } from 'expo-file-system';
+import { File } from "expo-file-system";
 import {
   type Recording,
   loadRecordings,
   saveRecordings,
   newFilePath as libNewFilePath,
-} from '../lib/recordings';
+} from "../lib/recordings";
 
 export type { Recording };
 
@@ -29,7 +29,7 @@ export class RealRecordingsRepository implements IRecordingsRepository {
   }
 
   deleteFile(path: string): void {
-    const file = new File('file://' + path);
+    const file = new File("file://" + path);
     if (file.exists) file.delete();
   }
 }

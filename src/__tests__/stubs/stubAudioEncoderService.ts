@@ -1,4 +1,4 @@
-import type { IAudioEncoderService } from '../../services/AudioEncoderService';
+import type { IAudioEncoderService } from "../../services/AudioEncoderService";
 
 export class StubAudioEncoderService implements IAudioEncoderService {
   startEncoding: jest.Mock<void, [string, number]> = jest.fn();

@@ -1,7 +1,11 @@
 import { E2EAudioBridge } from "../helpers/E2EAudioBridge";
 import { DEFAULT_SETTINGS } from "../../src/types/settings";
 
-const { voiceOnsetMs: VOICE_ONSET_MS, minRecordingMs: MIN_RECORDING_MS, silenceDurationMs: SILENCE_DURATION_MS } = DEFAULT_SETTINGS;
+const {
+  voiceOnsetMs: VOICE_ONSET_MS,
+  minRecordingMs: MIN_RECORDING_MS,
+  silenceDurationMs: SILENCE_DURATION_MS,
+} = DEFAULT_SETTINGS;
 
 // Appium/UiAutomator2 on Android emulators can be extremely slow (10-20s per command).
 // These timeouts account for that latency.
@@ -172,7 +176,10 @@ describeSwipe("VoiceMirror — swipe to delete", () => {
         const count = await $$(sel).length;
         return count === 0;
       },
-      { timeout: WAIT_SHORT, timeoutMsg: "Recording was not deleted by full swipe" },
+      {
+        timeout: WAIT_SHORT,
+        timeoutMsg: "Recording was not deleted by full swipe",
+      },
     );
   });
 });

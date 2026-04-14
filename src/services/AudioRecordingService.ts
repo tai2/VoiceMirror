@@ -1,5 +1,9 @@
-import { AudioManager, AudioRecorder } from 'react-native-audio-api';
-import type { PermissionStatus, SessionOptions, AudioRecorderCallbackOptions } from 'react-native-audio-api';
+import { AudioManager, AudioRecorder } from "react-native-audio-api";
+import type {
+  PermissionStatus,
+  SessionOptions,
+  AudioRecorderCallbackOptions,
+} from "react-native-audio-api";
 
 export type AudioChunkEvent = {
   chunk: Float32Array;

@@ -1,7 +1,11 @@
-import type { IAudioDecoderService } from '../../services/AudioDecoderService';
-import type { AudioBuffer } from 'react-native-audio-api';
+import type { IAudioDecoderService } from "../../services/AudioDecoderService";
+import type { AudioBuffer } from "react-native-audio-api";
 
-export function makeStubAudioBuffer(length = 44100, sampleRate = 44100, amplitude = 0): AudioBuffer {
+export function makeStubAudioBuffer(
+  length = 44100,
+  sampleRate = 44100,
+  amplitude = 0,
+): AudioBuffer {
   const data = new Float32Array(length).fill(amplitude);
   return {
     length,
@@ -15,5 +19,7 @@ export function makeStubAudioBuffer(length = 44100, sampleRate = 44100, amplitud
 }
 
 export class StubAudioDecoderService implements IAudioDecoderService {
-  decodeAudioData: jest.Mock<Promise<AudioBuffer>, [string, number]> = jest.fn().mockResolvedValue(makeStubAudioBuffer());
+  decodeAudioData: jest.Mock<Promise<AudioBuffer>, [string, number]> = jest
+    .fn()
+    .mockResolvedValue(makeStubAudioBuffer());
 }

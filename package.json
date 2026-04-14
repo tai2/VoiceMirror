@@ -23,7 +23,9 @@
     "e2e:ios": "wdio run e2e/wdio.ios.conf.ts",
     "e2e:android": "wdio run e2e/wdio.android.conf.ts",
     "test": "jest --watchAll",
-    "test:ci": "jest --passWithNoTests"
+    "test:ci": "jest --passWithNoTests",
+    "format": "prettier --write 'src/**/*.{ts,tsx}' 'app/**/*.{ts,tsx}' 'e2e/**/*.ts' '*.{js,ts,json}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'app/**/*.{ts,tsx}' 'e2e/**/*.ts' '*.{js,ts,json}'"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -66,8 +68,11 @@
     "dotenv": "^17.3.1",
     "eslint": "^9.39.4",
     "eslint-config-expo": "~55.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "jest": "~29.7.0",
     "jest-expo": "~55.0.11",
+    "prettier": "^3.8.2",
     "typescript": "~5.9.2",
     "ws": "^8.20.0"
   },

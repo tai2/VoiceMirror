@@ -1,7 +1,13 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { type AppSettings, DEFAULT_SETTINGS } from '../types/settings';
-import type { ISettingsRepository } from '../repositories/SettingsRepository';
-import { captureException } from '../lib/sentryHelpers';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { type AppSettings, DEFAULT_SETTINGS } from "../types/settings";
+import type { ISettingsRepository } from "../repositories/SettingsRepository";
+import { captureException } from "../lib/sentryHelpers";
 
 type SettingsContextValue = {
   settings: AppSettings;
@@ -26,15 +32,18 @@ export function SettingsProvider({
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    repository.load().then((s) => {
-      setSettings(s);
-      setLoaded(true);
-    }).catch((e) => {
-      captureException(e, {
-        operation: 'SettingsRepository.load',
+    repository
+      .load()
+      .then((s) => {
+        setSettings(s);
+        setLoaded(true);
+      })
+      .catch((e) => {
+        captureException(e, {
+          operation: "SettingsRepository.load",
+        });
+        setLoaded(true);
       });
-      setLoaded(true);
-    });
   }, [repository]);
 
   const updateSetting = useCallback(
@@ -42,7 +51,7 @@ export function SettingsProvider({
       setSettings((prev) => ({ ...prev, [key]: value }));
       repository.save(key, value).catch((e) => {
         captureException(e, {
-          operation: 'SettingsRepository.save',
+          operation: "SettingsRepository.save",
           key,
           value,
         });
@@ -55,13 +64,15 @@ export function SettingsProvider({
     setSettings(DEFAULT_SETTINGS);
     repository.resetAll().catch((e) => {
       captureException(e, {
-        operation: 'SettingsRepository.resetAll',
+        operation: "SettingsRepository.resetAll",
       });
     });
   }, [repository]);
 
   return (
-    <SettingsCtx.Provider value={{ settings, loaded, updateSetting, resetSettings }}>
+    <SettingsCtx.Provider
+      value={{ settings, loaded, updateSetting, resetSettings }}
+    >
       {children}
     </SettingsCtx.Provider>
   );
@@ -69,6 +80,6 @@ export function SettingsProvider({
 
 export function useSettings(): SettingsContextValue {
   const ctx = useContext(SettingsCtx);
-  if (!ctx) throw new Error('useSettings must be used inside SettingsProvider');
+  if (!ctx) throw new Error("useSettings must be used inside SettingsProvider");
   return ctx;
 }

@@ -1,14 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
-import type { AudioContext } from 'react-native-audio-api';
-import { LEVEL_HISTORY_SIZE } from '../constants/audio';
-import { computeLevel } from '../lib/audio';
-import { usePlaybackLevelHistory } from './usePlaybackLevelHistory';
-import type { Phase, VoiceMirrorState, RecordingCompleteCallback } from './types';
-import type { IAudioRecordingService, IAudioRecorder } from '../services/AudioRecordingService';
-import type { IAudioEncoderService } from '../services/AudioEncoderService';
-import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
-import type { DetectionSettings } from '../types/settings';
-import { captureException, captureMessage, addBreadcrumb } from '../lib/sentryHelpers';
+import { useEffect, useRef, useState } from "react";
+import type { AudioContext } from "react-native-audio-api";
+import { LEVEL_HISTORY_SIZE } from "../constants/audio";
+import { computeLevel } from "../lib/audio";
+import { usePlaybackLevelHistory } from "./usePlaybackLevelHistory";
+import type {
+  Phase,
+  VoiceMirrorState,
+  RecordingCompleteCallback,
+} from "./types";
+import type {
+  IAudioRecordingService,
+  IAudioRecorder,
+} from "../services/AudioRecordingService";
+import type { IAudioEncoderService } from "../services/AudioEncoderService";
+import type { IRecordingsRepository } from "../repositories/RecordingsRepository";
+import type { DetectionSettings } from "../types/settings";
+import {
+  captureException,
+  captureMessage,
+  addBreadcrumb,
+} from "../lib/sentryHelpers";
 
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
@@ -23,12 +34,12 @@ export function useVoiceMirror(
   repository: IRecordingsRepository,
   settings: DetectionSettings,
 ): VoiceMirrorState {
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>("idle");
   const [hasPermission, setHasPermission] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
-  const [levelHistory, setLevelHistory] = useState<number[]>(
-    () => new Array(LEVEL_HISTORY_SIZE).fill(0),
+  const [levelHistory, setLevelHistory] = useState<number[]>(() =>
+    new Array(LEVEL_HISTORY_SIZE).fill(0),
   );
   const [currentDb, setCurrentDb] = useState<number | null>(null);
 
@@ -36,9 +47,11 @@ export function useVoiceMirror(
 
   const audioContextRef = useRef(audioContext);
   const audioRecorderRef = useRef<IAudioRecorder | null>(null);
-  const playerNodeRef = useRef<ReturnType<NonNullable<typeof audioContext>['createBufferSource']> | null>(null);
+  const playerNodeRef = useRef<ReturnType<
+    NonNullable<typeof audioContext>["createBufferSource"]
+  > | null>(null);
 
-  const phaseRef = useRef<Phase>('idle');
+  const phaseRef = useRef<Phase>("idle");
   const voiceStartTimeRef = useRef<number | null>(null);
   const silenceStartTimeRef = useRef<number | null>(null);
 
@@ -60,16 +73,21 @@ export function useVoiceMirror(
 
     (async () => {
       const status = await recordingService.requestRecordingPermissions();
-      if (status !== 'Granted') {
+      if (status !== "Granted") {
         setPermissionDenied(true);
-        addBreadcrumb('voicemirror', 'Microphone permission denied', undefined, 'warning');
+        addBreadcrumb(
+          "voicemirror",
+          "Microphone permission denied",
+          undefined,
+          "warning",
+        );
         return;
       }
       setHasPermission(true);
-      addBreadcrumb('voicemirror', 'Microphone permission granted');
+      addBreadcrumb("voicemirror", "Microphone permission granted");
       recordingService.setAudioSessionOptions({
-        iosCategory: 'playAndRecord',
-        iosOptions: ['defaultToSpeaker'],
+        iosCategory: "playAndRecord",
+        iosOptions: ["defaultToSpeaker"],
       });
       audioRecorderRef.current = recordingService.createRecorder();
       await startMonitoringRef.current();
@@ -91,9 +109,9 @@ export function useVoiceMirror(
       encoderService.startEncoding(filePath, context.sampleRate);
       pendingFilePathRef.current = filePath;
     } catch (e) {
-      console.error('[AudioEncoder] startEncoding failed:', e);
+      console.error("[AudioEncoder] startEncoding failed:", e);
       captureException(e, {
-        operation: 'AudioEncoder.startEncoding',
+        operation: "AudioEncoder.startEncoding",
         filePath,
         sampleRate: context.sampleRate,
       });
@@ -114,10 +132,10 @@ export function useVoiceMirror(
       try {
         encoderService.encodeChunk(slice);
       } catch (e) {
-        console.error('[AudioEncoder] encodeChunk failed:', e);
+        console.error("[AudioEncoder] encodeChunk failed:", e);
         captureException(e, {
-          operation: 'AudioEncoder.encodeChunk',
-          phase: 'catchup',
+          operation: "AudioEncoder.encodeChunk",
+          phase: "catchup",
           filePath,
         });
         encoderFailedRef.current = true;
@@ -125,25 +143,30 @@ export function useVoiceMirror(
     }
   }
 
-  function tickStateMachine(db: number, totalFrames: number, sampleRate: number) {
+  function tickStateMachine(
+    db: number,
+    totalFrames: number,
+    sampleRate: number,
+  ) {
     const now = Date.now();
     const s = settingsRef.current;
 
-    if (phaseRef.current === 'idle') {
+    if (phaseRef.current === "idle") {
       if (db > s.voiceThresholdDb) {
         if (voiceStartTimeRef.current === null) {
           voiceStartTimeRef.current = now;
           const preRollFrames = Math.round((PRE_ROLL_MS / 1000) * sampleRate);
-          const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
+          const bufferStartFrame =
+            totalFramesRef.current - bufferedFramesRef.current;
           voiceStartFrameRef.current = Math.max(
             bufferStartFrame,
             totalFrames - preRollFrames,
           );
         } else if (now - voiceStartTimeRef.current >= s.voiceOnsetMs) {
           silenceStartTimeRef.current = null;
-          phaseRef.current = 'recording';
-          setPhase('recording');
-          addBreadcrumb('voicemirror', 'Recording started', {
+          phaseRef.current = "recording";
+          setPhase("recording");
+          addBreadcrumb("voicemirror", "Recording started", {
             voiceStartFrame: voiceStartFrameRef.current,
           });
           beginEncoding();
@@ -151,14 +174,15 @@ export function useVoiceMirror(
       } else {
         voiceStartTimeRef.current = null;
       }
-    } else if (phaseRef.current === 'recording') {
-      const speechMs = ((totalFrames - voiceStartFrameRef.current) / sampleRate) * 1000;
+    } else if (phaseRef.current === "recording") {
+      const speechMs =
+        ((totalFrames - voiceStartFrameRef.current) / sampleRate) * 1000;
 
       if (s.maxRecordingMs > 0 && speechMs >= s.maxRecordingMs) {
         silenceStartTimeRef.current = null;
-        phaseRef.current = 'playing';
-        setPhase('playing');
-        addBreadcrumb('voicemirror', 'Recording stopped, playing back');
+        phaseRef.current = "playing";
+        setPhase("playing");
+        addBreadcrumb("voicemirror", "Recording stopped, playing back");
         void stopAndPlay();
         return;
       }
@@ -168,9 +192,9 @@ export function useVoiceMirror(
           silenceStartTimeRef.current = now;
         } else if (now - silenceStartTimeRef.current >= s.silenceDurationMs) {
           silenceStartTimeRef.current = null;
-          phaseRef.current = 'playing';
-          setPhase('playing');
-          addBreadcrumb('voicemirror', 'Recording stopped, playing back');
+          phaseRef.current = "playing";
+          setPhase("playing");
+          addBreadcrumb("voicemirror", "Recording stopped, playing back");
           void stopAndPlay();
         }
       } else if (db >= s.silenceThresholdDb) {
@@ -189,7 +213,7 @@ export function useVoiceMirror(
     voiceStartTimeRef.current = null;
     silenceStartTimeRef.current = null;
     voiceStartFrameRef.current = 0;
-    phaseRef.current = 'idle';
+    phaseRef.current = "idle";
     pendingFilePathRef.current = null;
     encoderFailedRef.current = false;
     setRecordingError(null);
@@ -197,18 +221,22 @@ export function useVoiceMirror(
     await recordingService.setAudioSessionActivity(true);
     await context.resume();
     recorder.start();
-    addBreadcrumb('voicemirror', 'Monitoring started', {
+    addBreadcrumb("voicemirror", "Monitoring started", {
       sampleRate: context.sampleRate,
     });
 
     recorder.onAudioReady(
-      { sampleRate: context.sampleRate, bufferLength: BUFFER_LENGTH, channelCount: CHANNEL_COUNT },
+      {
+        sampleRate: context.sampleRate,
+        bufferLength: BUFFER_LENGTH,
+        channelCount: CHANNEL_COUNT,
+      },
       ({ chunk, numFrames }) => {
         chunksRef.current.push(chunk);
         totalFramesRef.current += numFrames;
         bufferedFramesRef.current += numFrames;
 
-        if (phaseRef.current === 'idle' && voiceStartTimeRef.current === null) {
+        if (phaseRef.current === "idle" && voiceStartTimeRef.current === null) {
           const maxFrames = MAX_IDLE_BUFFER_SECS * context.sampleRate;
           while (
             chunksRef.current.length > 1 &&
@@ -219,27 +247,31 @@ export function useVoiceMirror(
           }
         }
 
-        if (phaseRef.current === 'recording' && pendingFilePathRef.current && !encoderFailedRef.current) {
+        if (
+          phaseRef.current === "recording" &&
+          pendingFilePathRef.current &&
+          !encoderFailedRef.current
+        ) {
           try {
             encoderService.encodeChunk(chunk);
           } catch (e) {
-            console.error('[AudioEncoder] encodeChunk failed:', e);
+            console.error("[AudioEncoder] encodeChunk failed:", e);
             captureException(e, {
-              operation: 'AudioEncoder.encodeChunk',
-              phase: 'streaming',
+              operation: "AudioEncoder.encodeChunk",
+              phase: "streaming",
             });
             encoderFailedRef.current = true;
           }
         }
 
         const { normalized, db } = computeLevel(chunk, 0, numFrames);
-        setLevelHistory(prev => [...prev.slice(1), normalized]);
+        setLevelHistory((prev) => [...prev.slice(1), normalized]);
         setCurrentDb(db);
         tickStateMachine(db, totalFramesRef.current, context.sampleRate);
       },
     );
 
-    setPhase('idle');
+    setPhase("idle");
   }
 
   startMonitoringRef.current = startMonitoring;
@@ -265,12 +297,16 @@ export function useVoiceMirror(
       try {
         durationMs = await Promise.race([
           encoderService.stopEncoding(),
-          new Promise<number>((_, reject) => setTimeout(() => reject(new Error('stopEncoding timed out')), 5000)),
+          new Promise<number>((_, reject) =>
+            setTimeout(() => reject(new Error("stopEncoding timed out")), 5000),
+          ),
         ]);
         if (durationMs === 0) {
-          console.error(`[AudioEncoder] stopEncoding returned 0 for ${filePath}`);
-          captureMessage('AudioEncoder stopEncoding returned duration 0', {
-            operation: 'AudioEncoder.stopEncoding',
+          console.error(
+            `[AudioEncoder] stopEncoding returned 0 for ${filePath}`,
+          );
+          captureMessage("AudioEncoder stopEncoding returned duration 0", {
+            operation: "AudioEncoder.stopEncoding",
             filePath,
             sampleRate: context.sampleRate,
           });
@@ -278,23 +314,29 @@ export function useVoiceMirror(
       } catch (e) {
         console.error(`[AudioEncoder] stopEncoding threw for ${filePath}:`, e);
         captureException(e, {
-          operation: 'AudioEncoder.stopEncoding',
+          operation: "AudioEncoder.stopEncoding",
           filePath,
           sampleRate: context.sampleRate,
         });
       }
     } else if (filePath && encoderFailedRef.current) {
-      console.error(`[AudioEncoder] skipped stopEncoding due to prior chunk error: ${filePath}`);
-      captureMessage('AudioEncoder skipped stopEncoding due to prior chunk error', {
-        operation: 'AudioEncoder.stopEncoding',
-        filePath,
-        reason: 'prior_chunk_error',
-      }, 'warning');
+      console.error(
+        `[AudioEncoder] skipped stopEncoding due to prior chunk error: ${filePath}`,
+      );
+      captureMessage(
+        "AudioEncoder skipped stopEncoding due to prior chunk error",
+        {
+          operation: "AudioEncoder.stopEncoding",
+          filePath,
+          reason: "prior_chunk_error",
+        },
+        "warning",
+      );
     }
 
     if (filePath && durationMs === 0) {
       repository.deleteFile(filePath);
-      setRecordingError('recording_failed');
+      setRecordingError("recording_failed");
     }
 
     if (filePath && durationMs > 0) {
@@ -302,7 +344,11 @@ export function useVoiceMirror(
     }
 
     const bufferedFrames = bufferedFramesRef.current;
-    const audioBuffer = context.createBuffer(1, bufferedFrames, context.sampleRate);
+    const audioBuffer = context.createBuffer(
+      1,
+      bufferedFrames,
+      context.sampleRate,
+    );
     let offset = 0;
     for (const chunk of chunksRef.current) {
       audioBuffer.copyToChannel(chunk, 0, offset);
@@ -310,7 +356,8 @@ export function useVoiceMirror(
     }
 
     const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
-    const voiceStartSecs = (voiceStartFrameRef.current - bufferStartFrame) / context.sampleRate;
+    const voiceStartSecs =
+      (voiceStartFrameRef.current - bufferStartFrame) / context.sampleRate;
 
     const playerNode = context.createBufferSource();
     playerNodeRef.current = playerNode;
@@ -335,7 +382,7 @@ export function useVoiceMirror(
   }
 
   async function pauseMonitoring() {
-    addBreadcrumb('voicemirror', 'Monitoring paused');
+    addBreadcrumb("voicemirror", "Monitoring paused");
     if (playerNodeRef.current) {
       playerNodeRef.current.onEnded = null;
       playerNodeRef.current.stop();
@@ -354,10 +401,13 @@ export function useVoiceMirror(
         try {
           await encoderService.stopEncoding();
         } catch (e) {
-          console.error('[AudioEncoder] stopEncoding failed during pause cleanup:', e);
+          console.error(
+            "[AudioEncoder] stopEncoding failed during pause cleanup:",
+            e,
+          );
           captureException(e, {
-            operation: 'AudioEncoder.stopEncoding',
-            phase: 'pause_cleanup',
+            operation: "AudioEncoder.stopEncoding",
+            phase: "pause_cleanup",
             filePath,
           });
         }
@@ -367,19 +417,19 @@ export function useVoiceMirror(
 
     await audioContextRef.current?.suspend();
     await recordingService.setAudioSessionActivity(false);
-    phaseRef.current = 'paused';
-    setPhase('paused');
+    phaseRef.current = "paused";
+    setPhase("paused");
     setLevelHistory(new Array(LEVEL_HISTORY_SIZE).fill(0));
     setCurrentDb(null);
   }
 
   async function resumeMonitoring() {
-    addBreadcrumb('voicemirror', 'Monitoring resumed');
+    addBreadcrumb("voicemirror", "Monitoring resumed");
     await startMonitoring();
   }
 
   function togglePause() {
-    if (phaseRef.current === 'paused') {
+    if (phaseRef.current === "paused") {
       void resumeMonitoring();
     } else {
       void pauseMonitoring();
@@ -387,7 +437,7 @@ export function useVoiceMirror(
   }
 
   async function suspendForListPlayback() {
-    wasUserPausedRef.current = phaseRef.current === 'paused';
+    wasUserPausedRef.current = phaseRef.current === "paused";
 
     if (playerNodeRef.current) {
       playerNodeRef.current.onEnded = null;
@@ -396,11 +446,11 @@ export function useVoiceMirror(
     }
     stopPlaybackLevels();
 
-    if (phaseRef.current !== 'paused') {
+    if (phaseRef.current !== "paused") {
       audioRecorderRef.current?.clearOnAudioReady();
       audioRecorderRef.current?.stop();
-      phaseRef.current = 'idle';
-      setPhase('idle');
+      phaseRef.current = "idle";
+      setPhase("idle");
     } else {
       await recordingService.setAudioSessionActivity(true);
     }
@@ -410,8 +460,8 @@ export function useVoiceMirror(
 
   async function resumeFromListPlayback() {
     if (wasUserPausedRef.current) {
-      phaseRef.current = 'paused';
-      setPhase('paused');
+      phaseRef.current = "paused";
+      setPhase("paused");
       await audioContextRef.current?.suspend();
       await recordingService.setAudioSessionActivity(false);
     } else {

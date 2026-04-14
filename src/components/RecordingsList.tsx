@@ -1,17 +1,17 @@
-import { FlatList, View, Text, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import type { Recording } from '../lib/recordings';
-import type { PlayState } from '../hooks/useRecordings';
-import { RecordingItem } from './RecordingItem';
+import { FlatList, View, Text, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import type { Recording } from "../lib/recordings";
+import type { PlayState } from "../hooks/useRecordings";
+import { RecordingItem } from "./RecordingItem";
 
 // Design tokens
 const colors = {
-  background: '#0A0A0B',
-  surface: '#141416',
-  surfaceElevated: '#1C1C1F',
-  border: '#2A2A2E',
-  textMuted: '#71717A',
-  accent: '#2DD4BF',
+  background: "#0A0A0B",
+  surface: "#141416",
+  surfaceElevated: "#1C1C1F",
+  border: "#2A2A2E",
+  textMuted: "#71717A",
+  accent: "#2DD4BF",
 };
 
 type Props = {
@@ -22,7 +22,13 @@ type Props = {
   disabled: boolean;
 };
 
-export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, disabled }: Props) {
+export function RecordingsList({
+  recordings,
+  playState,
+  onTogglePlay,
+  onDelete,
+  disabled,
+}: Props) {
   const { t } = useTranslation();
 
   if (recordings.length === 0) {
@@ -34,8 +40,10 @@ export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, 
           <View style={styles.emptyIconBar2} />
           <View style={styles.emptyIconBar3} />
         </View>
-        <Text style={styles.emptyText}>{t('recordings.empty')}</Text>
-        <Text style={styles.emptyHint}>{t('recordings.empty_hint') || 'Start speaking to record'}</Text>
+        <Text style={styles.emptyText}>{t("recordings.empty")}</Text>
+        <Text style={styles.emptyHint}>
+          {t("recordings.empty_hint") || "Start speaking to record"}
+        </Text>
       </View>
     );
   }
@@ -43,7 +51,7 @@ export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, 
   return (
     <FlatList
       data={recordings}
-      keyExtractor={item => item.id}
+      keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <RecordingItem
           recording={item}
@@ -61,25 +69,25 @@ export function RecordingsList({ recordings, playState, onTogglePlay, onDelete, 
 }
 
 const styles = StyleSheet.create({
-  list: { 
+  list: {
     flex: 1,
   },
   listContent: {
     paddingBottom: 24,
   },
-  empty: { 
-    flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center',
+  empty: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 48,
     gap: 12,
   },
   emptyIconContainer: {
     width: 64,
     height: 48,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
     gap: 4,
     marginBottom: 8,
   },
@@ -107,10 +115,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.border,
   },
-  emptyText: { 
-    color: colors.textMuted, 
+  emptyText: {
+    color: colors.textMuted,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   emptyHint: {
     color: colors.border,

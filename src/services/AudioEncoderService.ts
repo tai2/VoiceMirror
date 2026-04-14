@@ -1,4 +1,4 @@
-import AudioEncoder from 'audio-encoder';
+import AudioEncoder from "audio-encoder";
 
 export interface IAudioEncoderService {
   startEncoding(filePath: string, sampleRate: number): void;

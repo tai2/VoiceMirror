@@ -1,27 +1,27 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import type { Phase } from '../hooks/types';
+import { useEffect, useRef } from "react";
+import { View, Text, Animated, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import type { Phase } from "../hooks/types";
 
 const PHASE_I18N_KEY: Record<Phase, string> = {
-  idle: 'phase.idle',
-  recording: 'phase.recording',
-  playing: 'phase.playing',
-  paused: 'phase.paused',
+  idle: "phase.idle",
+  recording: "phase.recording",
+  playing: "phase.playing",
+  paused: "phase.paused",
 };
 
 const PHASE_COLOR: Record<Phase, string> = {
-  idle: '#2DD4BF',
-  recording: '#F87171',
-  playing: '#5EEAD4',
-  paused: '#71717A',
+  idle: "#2DD4BF",
+  recording: "#F87171",
+  playing: "#5EEAD4",
+  paused: "#71717A",
 };
 
 const PHASE_BG: Record<Phase, string> = {
-  idle: 'rgba(45, 212, 191, 0.15)',
-  recording: 'rgba(248, 113, 113, 0.15)',
-  playing: 'rgba(94, 234, 212, 0.15)',
-  paused: 'rgba(113, 113, 122, 0.15)',
+  idle: "rgba(45, 212, 191, 0.15)",
+  recording: "rgba(248, 113, 113, 0.15)",
+  playing: "rgba(94, 234, 212, 0.15)",
+  paused: "rgba(113, 113, 122, 0.15)",
 };
 
 type Props = { phase: Phase };
@@ -34,29 +34,53 @@ export function PhaseDisplay({ phase }: Props) {
   useEffect(() => {
     const pulseAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1.0, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 0.4,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1.0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
       ]),
     );
-    
+
     const scaleAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.15, duration: 800, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1.0, duration: 800, useNativeDriver: true }),
+        Animated.timing(scale, {
+          toValue: 1.15,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1.0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
       ]),
     );
 
     const recordingScaleAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.2, duration: 500, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1.0, duration: 500, useNativeDriver: true }),
+        Animated.timing(scale, {
+          toValue: 1.2,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1.0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
       ]),
     );
 
-    if (phase === 'idle') {
+    if (phase === "idle") {
       pulseAnimation.start();
       scaleAnimation.start();
-    } else if (phase === 'recording') {
+    } else if (phase === "recording") {
       pulse.setValue(1);
       recordingScaleAnimation.start();
     } else {
@@ -79,32 +103,36 @@ export function PhaseDisplay({ phase }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <View style={styles.dotContainer}>
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.dotGlow, 
-            { 
-              backgroundColor: color, 
+            styles.dotGlow,
+            {
+              backgroundColor: color,
               opacity: pulse,
               transform: [{ scale }],
-            }
-          ]} 
+            },
+          ]}
         />
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.dot, 
-            { 
+            styles.dot,
+            {
               backgroundColor: color,
-              transform: [{ scale: Animated.multiply(scale, 0.7).interpolate({
-                inputRange: [0.7, 0.84],
-                outputRange: [1, 1.2],
-              }) }],
-            }
-          ]} 
+              transform: [
+                {
+                  scale: Animated.multiply(scale, 0.7).interpolate({
+                    inputRange: [0.7, 0.84],
+                    outputRange: [1, 1.2],
+                  }),
+                },
+              ],
+            },
+          ]}
         />
       </View>
-      <Text 
-        testID={`phase-${phase}`} 
-        accessibilityLabel={`phase-${phase}`} 
+      <Text
+        testID={`phase-${phase}`}
+        accessibilityLabel={`phase-${phase}`}
         style={[styles.label, { color }]}
       >
         {t(PHASE_I18N_KEY[phase])}
@@ -115,8 +143,8 @@ export function PhaseDisplay({ phase }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -125,11 +153,11 @@ const styles = StyleSheet.create({
   dotContainer: {
     width: 16,
     height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   dotGlow: {
-    position: 'absolute',
+    position: "absolute",
     width: 16,
     height: 16,
     borderRadius: 8,
@@ -141,8 +169,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 });

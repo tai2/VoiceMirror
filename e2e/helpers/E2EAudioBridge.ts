@@ -2,7 +2,10 @@ import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
 import { DEFAULT_SETTINGS } from "../../src/types/settings";
 
-const { voiceThresholdDb: VOICE_THRESHOLD_DB, silenceThresholdDb: SILENCE_THRESHOLD_DB } = DEFAULT_SETTINGS;
+const {
+  voiceThresholdDb: VOICE_THRESHOLD_DB,
+  silenceThresholdDb: SILENCE_THRESHOLD_DB,
+} = DEFAULT_SETTINGS;
 
 const CHUNK_FRAMES = 4096;
 const E2E_SAMPLE_RATE = 48000;

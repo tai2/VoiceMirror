@@ -1,5 +1,5 @@
-import { decodeAudioData } from 'react-native-audio-api';
-import type { AudioBuffer } from 'react-native-audio-api';
+import { decodeAudioData } from "react-native-audio-api";
+import type { AudioBuffer } from "react-native-audio-api";
 
 export interface IAudioDecoderService {
   decodeAudioData(filePath: string, sampleRate: number): Promise<AudioBuffer>;
