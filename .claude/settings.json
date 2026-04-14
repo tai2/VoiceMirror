@@ -27,5 +27,18 @@
       "Bash(./gradlew *)",
       "Bash(python3 -m json.tool)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | xargs pnpm prettier --write"
+          }
+        ]
+      }
+    ]
   }
 }

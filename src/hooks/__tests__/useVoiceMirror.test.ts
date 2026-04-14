@@ -1,17 +1,20 @@
-jest.mock('../../lib/sentryHelpers', () => ({
+jest.mock("../../lib/sentryHelpers", () => ({
   captureException: jest.fn(),
   captureMessage: jest.fn(),
   addBreadcrumb: jest.fn(),
 }));
 
-import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { useVoiceMirror } from '../useVoiceMirror';
-import { StubAudioRecordingService } from '../../__tests__/stubs/stubAudioRecordingService';
-import { StubAudioEncoderService } from '../../__tests__/stubs/stubAudioEncoderService';
-import { StubRecordingsRepository } from '../../__tests__/stubs/stubRecordingsRepository';
-import { makeStubAudioContext, makeStubBufferSourceNode } from '../../__tests__/stubs/stubAudioContext';
-import { LEVEL_HISTORY_SIZE } from '../../constants/audio';
-import { DEFAULT_SETTINGS } from '../../types/settings';
+import { renderHook, act, waitFor } from "@testing-library/react-native";
+import { useVoiceMirror } from "../useVoiceMirror";
+import { StubAudioRecordingService } from "../../__tests__/stubs/stubAudioRecordingService";
+import { StubAudioEncoderService } from "../../__tests__/stubs/stubAudioEncoderService";
+import { StubRecordingsRepository } from "../../__tests__/stubs/stubRecordingsRepository";
+import {
+  makeStubAudioContext,
+  makeStubBufferSourceNode,
+} from "../../__tests__/stubs/stubAudioContext";
+import { LEVEL_HISTORY_SIZE } from "../../constants/audio";
+import { DEFAULT_SETTINGS } from "../../types/settings";
 
 const {
   voiceThresholdDb: VOICE_THRESHOLD_DB,
@@ -41,10 +44,25 @@ function setup() {
   const audioContext = makeStubAudioContext();
 
   const { result, unmount } = renderHook(() =>
-    useVoiceMirror(onRecordingComplete, audioContext, recordingService, encoderService, repository, DEFAULT_SETTINGS),
+    useVoiceMirror(
+      onRecordingComplete,
+      audioContext,
+      recordingService,
+      encoderService,
+      repository,
+      DEFAULT_SETTINGS,
+    ),
   );
 
-  return { result, unmount, onRecordingComplete, recordingService, encoderService, repository, audioContext };
+  return {
+    result,
+    unmount,
+    onRecordingComplete,
+    recordingService,
+    encoderService,
+    repository,
+    audioContext,
+  };
 }
 
 async function setupWithPermission() {
@@ -87,33 +105,40 @@ afterEach(() => {
 // Permissions
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — permissions', () => {
-  it('hasPermission is false before the effect runs', () => {
+describe("useVoiceMirror — permissions", () => {
+  it("hasPermission is false before the effect runs", () => {
     const { result } = setup();
     expect(result.current.hasPermission).toBe(false);
   });
 
-  it('hasPermission becomes true after permission is granted', async () => {
+  it("hasPermission becomes true after permission is granted", async () => {
     const { result } = setup();
     await waitFor(() => expect(result.current.hasPermission).toBe(true));
   });
 
-  it('permissionDenied becomes true when permission is Denied', async () => {
+  it("permissionDenied becomes true when permission is Denied", async () => {
     const recordingService = new StubAudioRecordingService();
-    recordingService.requestRecordingPermissions.mockResolvedValue('Denied');
+    recordingService.requestRecordingPermissions.mockResolvedValue("Denied");
     const { result } = renderHook(() =>
-      useVoiceMirror(jest.fn(), makeStubAudioContext(), recordingService, new StubAudioEncoderService(), new StubRecordingsRepository(), DEFAULT_SETTINGS),
+      useVoiceMirror(
+        jest.fn(),
+        makeStubAudioContext(),
+        recordingService,
+        new StubAudioEncoderService(),
+        new StubRecordingsRepository(),
+        DEFAULT_SETTINGS,
+      ),
     );
     await waitFor(() => expect(result.current.permissionDenied).toBe(true));
     expect(result.current.hasPermission).toBe(false);
   });
 
-  it('calls setAudioSessionOptions once after permission is granted', async () => {
+  it("calls setAudioSessionOptions once after permission is granted", async () => {
     const { recordingService } = await setupWithPermission();
     expect(recordingService.setAudioSessionOptions).toHaveBeenCalledTimes(1);
   });
 
-  it('calls createRecorder once after permission is granted', async () => {
+  it("calls createRecorder once after permission is granted", async () => {
     const { recordingService } = await setupWithPermission();
     expect(recordingService.createRecorder).toHaveBeenCalledTimes(1);
   });
@@ -123,8 +148,8 @@ describe('useVoiceMirror — permissions', () => {
 // Phase: idle → recording
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — idle → recording', () => {
-  it('stays idle when audio is below voice threshold', async () => {
+describe("useVoiceMirror — idle → recording", () => {
+  it("stays idle when audio is below voice threshold", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -134,10 +159,10 @@ describe('useVoiceMirror — idle → recording', () => {
       }
     });
 
-    expect(result.current.phase).toBe('idle');
+    expect(result.current.phase).toBe("idle");
   });
 
-  it('resets voice onset timer when audio drops below threshold mid-onset', async () => {
+  it("resets voice onset timer when audio drops below threshold mid-onset", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -149,30 +174,34 @@ describe('useVoiceMirror — idle → recording', () => {
       recordingService.recorder.simulateChunk(makeSilentChunk());
     });
 
-    expect(result.current.phase).toBe('idle');
+    expect(result.current.phase).toBe("idle");
   });
 
-  it('transitions to recording after sustained voice above threshold', async () => {
+  it("transitions to recording after sustained voice above threshold", async () => {
     const { result, recordingService } = await setupWithPermission();
 
-    act(() => { simulateVoiceOnset(recordingService); });
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
 
-    expect(result.current.phase).toBe('recording');
+    expect(result.current.phase).toBe("recording");
   });
 
-  it('calls encoderService.startEncoding exactly once when recording begins', async () => {
+  it("calls encoderService.startEncoding exactly once when recording begins", async () => {
     const { recordingService, encoderService } = await setupWithPermission();
 
-    act(() => { simulateVoiceOnset(recordingService); });
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
 
     expect(encoderService.startEncoding).toHaveBeenCalledTimes(1);
     expect(encoderService.startEncoding).toHaveBeenCalledWith(
-      expect.stringContaining('.m4a'),
+      expect.stringContaining(".m4a"),
       expect.any(Number),
     );
   });
 
-  it('retroactively feeds pre-voice chunks to encodeChunk in beginEncoding', async () => {
+  it("retroactively feeds pre-voice chunks to encodeChunk in beginEncoding", async () => {
     const { recordingService, encoderService } = await setupWithPermission();
 
     act(() => {
@@ -180,7 +209,9 @@ describe('useVoiceMirror — idle → recording', () => {
       recordingService.recorder.simulateChunk(makeLoudChunk());
     });
 
-    act(() => { simulateVoiceOnset(recordingService); });
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
 
     expect(encoderService.encodeChunk).toHaveBeenCalled();
   });
@@ -190,8 +221,8 @@ describe('useVoiceMirror — idle → recording', () => {
 // Phase: recording → playing
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — recording → playing', () => {
-  it('transitions to playing after sufficient silence following minimum recording', async () => {
+describe("useVoiceMirror — recording → playing", () => {
+  it("transitions to playing after sufficient silence following minimum recording", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -204,10 +235,10 @@ describe('useVoiceMirror — recording → playing', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
   });
 
-  it('does not transition to playing if recording is shorter than MIN_RECORDING_MS', async () => {
+  it("does not transition to playing if recording is shorter than MIN_RECORDING_MS", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     // Use exactly the minimum chunks for onset (4 × 100ms = onset at 300ms elapsed).
@@ -224,11 +255,12 @@ describe('useVoiceMirror — recording → playing', () => {
       recordingService.recorder.simulateChunk(makeSilentChunk(100));
     });
 
-    expect(result.current.phase).toBe('recording');
+    expect(result.current.phase).toBe("recording");
   });
 
-  it('awaits encoderService.stopEncoding when transitioning to playing', async () => {
-    const { result, recordingService, encoderService } = await setupWithPermission();
+  it("awaits encoderService.stopEncoding when transitioning to playing", async () => {
+    const { result, recordingService, encoderService } =
+      await setupWithPermission();
 
     act(() => {
       simulateVoiceOnset(recordingService);
@@ -240,12 +272,13 @@ describe('useVoiceMirror — recording → playing', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
     expect(encoderService.stopEncoding).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onRecordingComplete with filePath and durationMs when encoding succeeds', async () => {
-    const { result, recordingService, encoderService, onRecordingComplete } = await setupWithPermission();
+  it("calls onRecordingComplete with filePath and durationMs when encoding succeeds", async () => {
+    const { result, recordingService, encoderService, onRecordingComplete } =
+      await setupWithPermission();
     encoderService.stopEncoding.mockResolvedValue(1500);
 
     act(() => {
@@ -258,12 +291,21 @@ describe('useVoiceMirror — recording → playing', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
-    expect(onRecordingComplete).toHaveBeenCalledWith(expect.stringContaining('.m4a'), 1500);
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
+    expect(onRecordingComplete).toHaveBeenCalledWith(
+      expect.stringContaining(".m4a"),
+      1500,
+    );
   });
 
-  it('calls repository.deleteFile and does NOT call onRecordingComplete when stopEncoding returns 0', async () => {
-    const { result, recordingService, encoderService, repository, onRecordingComplete } = await setupWithPermission();
+  it("calls repository.deleteFile and does NOT call onRecordingComplete when stopEncoding returns 0", async () => {
+    const {
+      result,
+      recordingService,
+      encoderService,
+      repository,
+      onRecordingComplete,
+    } = await setupWithPermission();
     encoderService.stopEncoding.mockResolvedValue(0);
 
     act(() => {
@@ -276,13 +318,14 @@ describe('useVoiceMirror — recording → playing', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
     expect(repository.deleteFile).toHaveBeenCalledTimes(1);
     expect(onRecordingComplete).not.toHaveBeenCalled();
   });
 
-  it('sets recordingError when stopEncoding returns 0', async () => {
-    const { result, recordingService, encoderService } = await setupWithPermission();
+  it("sets recordingError when stopEncoding returns 0", async () => {
+    const { result, recordingService, encoderService } =
+      await setupWithPermission();
     encoderService.stopEncoding.mockResolvedValue(0);
 
     act(() => {
@@ -296,7 +339,7 @@ describe('useVoiceMirror — recording → playing', () => {
     });
 
     await waitFor(() => expect(result.current.recordingError).not.toBeNull());
-    expect(result.current.recordingError).toBe('recording_failed');
+    expect(result.current.recordingError).toBe("recording_failed");
   });
 });
 
@@ -304,36 +347,44 @@ describe('useVoiceMirror — recording → playing', () => {
 // Phase: pause / resume
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — pause / resume', () => {
-  it('transitions to paused when togglePause is called in idle', async () => {
+describe("useVoiceMirror — pause / resume", () => {
+  it("transitions to paused when togglePause is called in idle", async () => {
     const { result } = await setupWithPermission();
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
 
-    expect(result.current.phase).toBe('paused');
+    expect(result.current.phase).toBe("paused");
   });
 
-  it('calls setAudioSessionActivity(false) when pausing', async () => {
+  it("calls setAudioSessionActivity(false) when pausing", async () => {
     const { result, recordingService } = await setupWithPermission();
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
 
     const calls = recordingService.setAudioSessionActivity.mock.calls;
     const pauseCall = calls.find(([arg]) => arg === false);
     expect(pauseCall).toBeDefined();
   });
 
-  it('returns to idle when togglePause is called while paused', async () => {
+  it("returns to idle when togglePause is called while paused", async () => {
     const { result } = await setupWithPermission();
 
-    await act(async () => { result.current.togglePause(); });
-    expect(result.current.phase).toBe('paused');
+    await act(async () => {
+      result.current.togglePause();
+    });
+    expect(result.current.phase).toBe("paused");
 
-    await act(async () => { result.current.togglePause(); });
-    expect(result.current.phase).toBe('idle');
+    await act(async () => {
+      result.current.togglePause();
+    });
+    expect(result.current.phase).toBe("idle");
   });
 
-  it('zeroes out levelHistory when paused', async () => {
+  it("zeroes out levelHistory when paused", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -343,10 +394,12 @@ describe('useVoiceMirror — pause / resume', () => {
       }
     });
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
 
     expect(result.current.levelHistory).toHaveLength(LEVEL_HISTORY_SIZE);
-    expect(result.current.levelHistory.every(v => v === 0)).toBe(true);
+    expect(result.current.levelHistory.every((v) => v === 0)).toBe(true);
   });
 });
 
@@ -354,29 +407,41 @@ describe('useVoiceMirror — pause / resume', () => {
 // Pause during recording cleanup
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — pause during recording cleanup', () => {
-  it('calls stopEncoding and deleteFile when paused during recording', async () => {
-    const { result, recordingService, encoderService, repository } = await setupWithPermission();
+describe("useVoiceMirror — pause during recording cleanup", () => {
+  it("calls stopEncoding and deleteFile when paused during recording", async () => {
+    const { result, recordingService, encoderService, repository } =
+      await setupWithPermission();
 
-    act(() => { simulateVoiceOnset(recordingService); });
-    expect(result.current.phase).toBe('recording');
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
+    expect(result.current.phase).toBe("recording");
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
 
-    expect(result.current.phase).toBe('paused');
+    expect(result.current.phase).toBe("paused");
     expect(encoderService.stopEncoding).toHaveBeenCalledTimes(1);
     expect(repository.deleteFile).toHaveBeenCalledTimes(1);
-    expect(repository.deleteFile).toHaveBeenCalledWith(expect.stringContaining('.m4a'));
+    expect(repository.deleteFile).toHaveBeenCalledWith(
+      expect.stringContaining(".m4a"),
+    );
   });
 
-  it('skips stopEncoding but still deletes file when encoder had failed', async () => {
-    const { result, recordingService, encoderService, repository } = await setupWithPermission();
+  it("skips stopEncoding but still deletes file when encoder had failed", async () => {
+    const { result, recordingService, encoderService, repository } =
+      await setupWithPermission();
 
-    act(() => { simulateVoiceOnset(recordingService); });
-    expect(result.current.phase).toBe('recording');
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
+    expect(result.current.phase).toBe("recording");
 
     // Make encodeChunk fail so encoderFailedRef becomes true
-    encoderService.encodeChunk.mockImplementation(() => { throw new Error('encode failed'); });
+    encoderService.encodeChunk.mockImplementation(() => {
+      throw new Error("encode failed");
+    });
 
     act(() => {
       jest.advanceTimersByTime(100);
@@ -386,21 +451,25 @@ describe('useVoiceMirror — pause during recording cleanup', () => {
     // Reset mock to track only pause-related calls
     encoderService.stopEncoding.mockClear();
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
 
-    expect(result.current.phase).toBe('paused');
+    expect(result.current.phase).toBe("paused");
     expect(encoderService.stopEncoding).not.toHaveBeenCalled();
     expect(repository.deleteFile).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call stopEncoding or deleteFile when paused from idle', async () => {
+  it("does not call stopEncoding or deleteFile when paused from idle", async () => {
     const { result, encoderService, repository } = await setupWithPermission();
 
-    expect(result.current.phase).toBe('idle');
+    expect(result.current.phase).toBe("idle");
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
 
-    expect(result.current.phase).toBe('paused');
+    expect(result.current.phase).toBe("paused");
     expect(encoderService.stopEncoding).not.toHaveBeenCalled();
     expect(repository.deleteFile).not.toHaveBeenCalled();
   });
@@ -410,38 +479,52 @@ describe('useVoiceMirror — pause during recording cleanup', () => {
 // List playback coordination
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — list playback coordination', () => {
-  it('suspendForListPlayback stops the recorder and sets phase to idle', async () => {
+describe("useVoiceMirror — list playback coordination", () => {
+  it("suspendForListPlayback stops the recorder and sets phase to idle", async () => {
     const { result, recordingService } = await setupWithPermission();
 
-    await act(async () => { await result.current.suspendForListPlayback(); });
+    await act(async () => {
+      await result.current.suspendForListPlayback();
+    });
 
     expect(recordingService.recorder.stop).toHaveBeenCalled();
-    expect(result.current.phase).toBe('idle');
+    expect(result.current.phase).toBe("idle");
   });
 
-  it('resumeFromListPlayback restarts monitoring when not user-paused', async () => {
+  it("resumeFromListPlayback restarts monitoring when not user-paused", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     const startCallsBefore = recordingService.recorder.start.mock.calls.length;
 
-    await act(async () => { await result.current.suspendForListPlayback(); });
-    await act(async () => { await result.current.resumeFromListPlayback(); });
+    await act(async () => {
+      await result.current.suspendForListPlayback();
+    });
+    await act(async () => {
+      await result.current.resumeFromListPlayback();
+    });
 
-    expect(recordingService.recorder.start.mock.calls.length).toBeGreaterThan(startCallsBefore);
-    expect(result.current.phase).toBe('idle');
+    expect(recordingService.recorder.start.mock.calls.length).toBeGreaterThan(
+      startCallsBefore,
+    );
+    expect(result.current.phase).toBe("idle");
   });
 
-  it('resumeFromListPlayback stays paused when user had explicitly paused before list playback', async () => {
+  it("resumeFromListPlayback stays paused when user had explicitly paused before list playback", async () => {
     const { result } = await setupWithPermission();
 
-    await act(async () => { result.current.togglePause(); });
-    expect(result.current.phase).toBe('paused');
+    await act(async () => {
+      result.current.togglePause();
+    });
+    expect(result.current.phase).toBe("paused");
 
-    await act(async () => { await result.current.suspendForListPlayback(); });
-    await act(async () => { await result.current.resumeFromListPlayback(); });
+    await act(async () => {
+      await result.current.suspendForListPlayback();
+    });
+    await act(async () => {
+      await result.current.resumeFromListPlayback();
+    });
 
-    expect(result.current.phase).toBe('paused');
+    expect(result.current.phase).toBe("paused");
   });
 });
 
@@ -449,8 +532,8 @@ describe('useVoiceMirror — list playback coordination', () => {
 // Recording timeout
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — recording timeout', () => {
-  it('transitions to playing when speechMs exceeds maxRecordingMs', async () => {
+describe("useVoiceMirror — recording timeout", () => {
+  it("transitions to playing when speechMs exceeds maxRecordingMs", async () => {
     const onRecordingComplete = jest.fn();
     const recordingService = new StubAudioRecordingService();
     const encoderService = new StubAudioEncoderService();
@@ -459,8 +542,12 @@ describe('useVoiceMirror — recording timeout', () => {
 
     const { result } = renderHook(() =>
       useVoiceMirror(
-        onRecordingComplete, audioContext, recordingService,
-        encoderService, repository, { ...DEFAULT_SETTINGS, maxRecordingMs: 2000 },
+        onRecordingComplete,
+        audioContext,
+        recordingService,
+        encoderService,
+        repository,
+        { ...DEFAULT_SETTINGS, maxRecordingMs: 2000 },
       ),
     );
 
@@ -477,10 +564,10 @@ describe('useVoiceMirror — recording timeout', () => {
       }
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
   });
 
-  it('does not timeout when maxRecordingMs is 0 (unlimited)', async () => {
+  it("does not timeout when maxRecordingMs is 0 (unlimited)", async () => {
     const onRecordingComplete = jest.fn();
     const recordingService = new StubAudioRecordingService();
     const encoderService = new StubAudioEncoderService();
@@ -489,8 +576,12 @@ describe('useVoiceMirror — recording timeout', () => {
 
     const { result } = renderHook(() =>
       useVoiceMirror(
-        onRecordingComplete, audioContext, recordingService,
-        encoderService, repository, { ...DEFAULT_SETTINGS, maxRecordingMs: 0 },
+        onRecordingComplete,
+        audioContext,
+        recordingService,
+        encoderService,
+        repository,
+        { ...DEFAULT_SETTINGS, maxRecordingMs: 0 },
       ),
     );
 
@@ -507,10 +598,10 @@ describe('useVoiceMirror — recording timeout', () => {
       }
     });
 
-    expect(result.current.phase).toBe('recording');
+    expect(result.current.phase).toBe("recording");
   });
 
-  it('calls onRecordingComplete when timeout triggers with valid encoding', async () => {
+  it("calls onRecordingComplete when timeout triggers with valid encoding", async () => {
     const onRecordingComplete = jest.fn();
     const recordingService = new StubAudioRecordingService();
     const encoderService = new StubAudioEncoderService();
@@ -520,8 +611,12 @@ describe('useVoiceMirror — recording timeout', () => {
 
     const { result } = renderHook(() =>
       useVoiceMirror(
-        onRecordingComplete, audioContext, recordingService,
-        encoderService, repository, { ...DEFAULT_SETTINGS, maxRecordingMs: 2000 },
+        onRecordingComplete,
+        audioContext,
+        recordingService,
+        encoderService,
+        repository,
+        { ...DEFAULT_SETTINGS, maxRecordingMs: 2000 },
       ),
     );
 
@@ -538,9 +633,9 @@ describe('useVoiceMirror — recording timeout', () => {
       }
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
     expect(onRecordingComplete).toHaveBeenCalledWith(
-      expect.stringContaining('.m4a'),
+      expect.stringContaining(".m4a"),
       2000,
     );
   });
@@ -550,8 +645,8 @@ describe('useVoiceMirror — recording timeout', () => {
 // Pre-roll
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — pre-roll', () => {
-  it('includes pre-roll audio before voice detection point in encoding', async () => {
+describe("useVoiceMirror — pre-roll", () => {
+  it("includes pre-roll audio before voice detection point in encoding", async () => {
     const { recordingService, encoderService } = await setupWithPermission();
 
     act(() => {
@@ -561,7 +656,9 @@ describe('useVoiceMirror — pre-roll', () => {
       }
     });
 
-    act(() => { simulateVoiceOnset(recordingService); });
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
 
     const totalEncodedFrames = encoderService.encodeChunk.mock.calls.reduce(
       (sum: number, [chunk]: [Float32Array]) => sum + chunk.length,
@@ -572,10 +669,12 @@ describe('useVoiceMirror — pre-roll', () => {
     expect(totalEncodedFrames).toBeGreaterThan(voiceOnsetFrames);
   });
 
-  it('clamps pre-roll to buffer start when less than 100ms of audio exists', async () => {
+  it("clamps pre-roll to buffer start when less than 100ms of audio exists", async () => {
     const { recordingService, encoderService } = await setupWithPermission();
 
-    act(() => { simulateVoiceOnset(recordingService); });
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
 
     expect(encoderService.startEncoding).toHaveBeenCalledTimes(1);
     expect(encoderService.encodeChunk).toHaveBeenCalled();
@@ -586,8 +685,8 @@ describe('useVoiceMirror — pre-roll', () => {
 // currentDb state
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — currentDb', () => {
-  it('updates currentDb on audio chunk during idle phase', async () => {
+describe("useVoiceMirror — currentDb", () => {
+  it("updates currentDb on audio chunk during idle phase", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -596,14 +695,16 @@ describe('useVoiceMirror — currentDb', () => {
     });
 
     expect(result.current.currentDb).not.toBeNull();
-    expect(typeof result.current.currentDb).toBe('number');
+    expect(typeof result.current.currentDb).toBe("number");
   });
 
-  it('updates currentDb on audio chunk during recording phase', async () => {
+  it("updates currentDb on audio chunk during recording phase", async () => {
     const { result, recordingService } = await setupWithPermission();
 
-    act(() => { simulateVoiceOnset(recordingService); });
-    expect(result.current.phase).toBe('recording');
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
+    expect(result.current.phase).toBe("recording");
 
     act(() => {
       jest.advanceTimersByTime(100);
@@ -613,7 +714,7 @@ describe('useVoiceMirror — currentDb', () => {
     expect(result.current.currentDb).not.toBeNull();
   });
 
-  it('resets currentDb to null when pausing', async () => {
+  it("resets currentDb to null when pausing", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -622,11 +723,13 @@ describe('useVoiceMirror — currentDb', () => {
     });
     expect(result.current.currentDb).not.toBeNull();
 
-    await act(async () => { result.current.togglePause(); });
+    await act(async () => {
+      result.current.togglePause();
+    });
     expect(result.current.currentDb).toBeNull();
   });
 
-  it('resets currentDb to null when transitioning to playback', async () => {
+  it("resets currentDb to null when transitioning to playback", async () => {
     const { result, recordingService } = await setupWithPermission();
 
     act(() => {
@@ -639,7 +742,7 @@ describe('useVoiceMirror — currentDb', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
     expect(result.current.currentDb).toBeNull();
   });
 });
@@ -648,9 +751,10 @@ describe('useVoiceMirror — currentDb', () => {
 // Level history during playback
 // ---------------------------------------------------------------------------
 
-describe('useVoiceMirror — level history during playback', () => {
-  it('levelHistory updates during the playing phase', async () => {
-    const { result, recordingService, audioContext } = await setupWithPermission();
+describe("useVoiceMirror — level history during playback", () => {
+  it("levelHistory updates during the playing phase", async () => {
+    const { result, recordingService, audioContext } =
+      await setupWithPermission();
 
     // Make createBuffer return a buffer with loud audio data
     const loudData = new Float32Array(44100).fill(0.5);
@@ -678,17 +782,20 @@ describe('useVoiceMirror — level history during playback', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
 
     // Advance timers to trigger playback level ticks
-    act(() => { jest.advanceTimersByTime(93 * 3); });
+    act(() => {
+      jest.advanceTimersByTime(93 * 3);
+    });
 
-    const hasNonZero = result.current.levelHistory.some(v => v > 0);
+    const hasNonZero = result.current.levelHistory.some((v) => v > 0);
     expect(hasNonZero).toBe(true);
   });
 
-  it('levelHistory stops updating after playback ends', async () => {
-    const { result, recordingService, audioContext } = await setupWithPermission();
+  it("levelHistory stops updating after playback ends", async () => {
+    const { result, recordingService, audioContext } =
+      await setupWithPermission();
 
     const loudData = new Float32Array(44100).fill(0.5);
     const stubBuffer = {
@@ -715,15 +822,19 @@ describe('useVoiceMirror — level history during playback', () => {
       simulateSilence(recordingService);
     });
 
-    await waitFor(() => expect(result.current.phase).toBe('playing'));
+    await waitFor(() => expect(result.current.phase).toBe("playing"));
 
     // Trigger onEnded to simulate playback ending
-    act(() => { stubSource.onEnded?.(); });
+    act(() => {
+      stubSource.onEnded?.();
+    });
 
     // Advance timers - should not produce further playback level updates
-    act(() => { jest.advanceTimersByTime(93 * 5); });
+    act(() => {
+      jest.advanceTimersByTime(93 * 5);
+    });
 
     // Phase should be idle now (startMonitoring resets)
-    await waitFor(() => expect(result.current.phase).toBe('idle'));
+    await waitFor(() => expect(result.current.phase).toBe("idle"));
   });
 });

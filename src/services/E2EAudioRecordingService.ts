@@ -19,7 +19,11 @@ const E2E_BRIDGE_SAMPLE_RATE = 48000;
 
 export type E2EConnectionStatus = "disconnected" | "connecting" | "connected";
 
-function resample(input: Float32Array, fromRate: number, toRate: number): Float32Array {
+function resample(
+  input: Float32Array,
+  fromRate: number,
+  toRate: number,
+): Float32Array {
   if (fromRate === toRate) return input;
   const ratio = toRate / fromRate;
   const outLen = Math.round(input.length * ratio);
@@ -108,7 +112,11 @@ class E2EAudioRecorder implements IAudioRecorder {
         return;
       }
       const raw = new Float32Array(buffer);
-      const samples = resample(raw, E2E_BRIDGE_SAMPLE_RATE, this.targetSampleRate);
+      const samples = resample(
+        raw,
+        E2E_BRIDGE_SAMPLE_RATE,
+        this.targetSampleRate,
+      );
       this.callback({ chunk: samples, numFrames: samples.length });
     };
 

@@ -1,4 +1,4 @@
-import { DB_FLOOR, DB_CEIL } from '../constants/audio';
+import { DB_FLOOR, DB_CEIL } from "../constants/audio";
 
 export type LevelResult = {
   normalized: number;
@@ -17,7 +17,10 @@ export function computeLevel(
   }
   const rms = Math.sqrt(sumSq / numFrames);
   const db = 20 * Math.log10(Math.max(rms, 1e-10));
-  const normalized = Math.max(0, Math.min(1, (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)));
+  const normalized = Math.max(
+    0,
+    Math.min(1, (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR)),
+  );
   return { normalized, db };
 }
 

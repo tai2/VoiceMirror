@@ -1,5 +1,5 @@
-import { Directory, File, Paths } from 'expo-file-system';
-import { captureException, captureMessage } from './sentryHelpers';
+import { Directory, File, Paths } from "expo-file-system";
+import { captureException, captureMessage } from "./sentryHelpers";
 
 export interface Recording {
   id: string;
@@ -8,8 +8,9 @@ export interface Recording {
   durationMs: number;
 }
 
-const recordingsDir = (): Directory => new Directory(Paths.document, 'recordings');
-const indexFile = (): File => new File(recordingsDir(), 'index.json');
+const recordingsDir = (): Directory =>
+  new Directory(Paths.document, "recordings");
+const indexFile = (): File => new File(recordingsDir(), "index.json");
 
 export function ensureDir(): void {
   const dir = recordingsDir();
@@ -32,11 +33,15 @@ export async function loadRecordings(): Promise<Recording[]> {
       console.warn(
         `[recordings] Removing stale entry: ${recording.filePath} (file not found on disk)`,
       );
-      captureMessage('Stale recording entry removed (file missing)', {
-        operation: 'loadRecordings',
-        filePath: recording.filePath,
-        recordingId: recording.id,
-      }, 'warning');
+      captureMessage(
+        "Stale recording entry removed (file missing)",
+        {
+          operation: "loadRecordings",
+          filePath: recording.filePath,
+          recordingId: recording.id,
+        },
+        "warning",
+      );
     }
   }
 
@@ -45,23 +50,34 @@ export async function loadRecordings(): Promise<Recording[]> {
   }
 
   // Delete orphaned .m4a files (on disk but not in index)
-  const validUris = new Set(valid.map(r => r.filePath));
+  const validUris = new Set(valid.map((r) => r.filePath));
   const dir = recordingsDir();
   for (const entry of dir.list()) {
-    if (entry instanceof File && entry.uri.endsWith('.m4a') && !validUris.has(entry.uri)) {
+    if (
+      entry instanceof File &&
+      entry.uri.endsWith(".m4a") &&
+      !validUris.has(entry.uri)
+    ) {
       console.warn(
         `[recordings] Deleting orphaned file: ${entry.uri} (not in index)`,
       );
-      captureMessage('Orphaned recording file deleted', {
-        operation: 'loadRecordings',
-        fileUri: entry.uri,
-      }, 'warning');
+      captureMessage(
+        "Orphaned recording file deleted",
+        {
+          operation: "loadRecordings",
+          fileUri: entry.uri,
+        },
+        "warning",
+      );
       try {
         entry.delete();
       } catch (e) {
-        console.error(`[recordings] Failed to delete orphaned file: ${entry.uri}`, e);
+        console.error(
+          `[recordings] Failed to delete orphaned file: ${entry.uri}`,
+          e,
+        );
         captureException(e, {
-          operation: 'deleteOrphanedFile',
+          operation: "deleteOrphanedFile",
           fileUri: entry.uri,
         });
       }
@@ -80,5 +96,5 @@ export function newFilePath(): string {
   ensureDir();
   const dir = recordingsDir();
   const file = new File(dir, `recording_${Date.now()}.m4a`);
-  return file.uri.replace('file://', '');
+  return file.uri.replace("file://", "");
 }

@@ -46,18 +46,13 @@
         "react-native-audio-api",
         {
           "iosMicrophonePermission": "VoiceMirror records your voice so you can immediately hear yourself back.",
-          "androidPermissions": [
-            "android.permission.RECORD_AUDIO"
-          ]
+          "androidPermissions": ["android.permission.RECORD_AUDIO"]
         }
       ],
       [
         "expo-localization",
         {
-          "supportedLocales": [
-            "en",
-            "ja"
-          ]
+          "supportedLocales": ["en", "ja"]
         }
       ],
       [

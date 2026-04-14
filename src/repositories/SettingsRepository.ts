@@ -1,19 +1,22 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { type AppSettings, DEFAULT_SETTINGS } from '../types/settings';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { type AppSettings, DEFAULT_SETTINGS } from "../types/settings";
 
 const STORAGE_KEYS: Record<keyof AppSettings, string> = {
-  voiceThresholdDb: 'setting:voiceThresholdDb',
-  voiceOnsetMs: 'setting:voiceOnsetMs',
-  silenceThresholdDb: 'setting:silenceThresholdDb',
-  silenceDurationMs: 'setting:silenceDurationMs',
-  minRecordingMs: 'setting:minRecordingMs',
-  maxRecordings: 'setting:maxRecordings',
-  maxRecordingMs: 'setting:maxRecordingMs',
+  voiceThresholdDb: "setting:voiceThresholdDb",
+  voiceOnsetMs: "setting:voiceOnsetMs",
+  silenceThresholdDb: "setting:silenceThresholdDb",
+  silenceDurationMs: "setting:silenceDurationMs",
+  minRecordingMs: "setting:minRecordingMs",
+  maxRecordings: "setting:maxRecordings",
+  maxRecordingMs: "setting:maxRecordingMs",
 };
 
 export interface ISettingsRepository {
   load(): Promise<AppSettings>;
-  save<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void>;
+  save<K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K],
+  ): Promise<void>;
   resetAll(): Promise<void>;
 }
 

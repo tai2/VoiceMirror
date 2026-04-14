@@ -1,5 +1,5 @@
-import type { AudioContext, AudioBuffer } from 'react-native-audio-api';
-import { makeStubAudioBuffer } from './stubAudioDecoderService';
+import type { AudioContext, AudioBuffer } from "react-native-audio-api";
+import { makeStubAudioBuffer } from "./stubAudioDecoderService";
 
 export type StubAudioBufferSourceNode = {
   buffer: AudioBuffer | null;
@@ -22,7 +22,7 @@ export function makeStubBufferSourceNode(): StubAudioBufferSourceNode {
 export function makeStubAudioContext(sampleRate = 44100): AudioContext {
   return {
     sampleRate,
-    destination: {} as AudioContext['destination'],
+    destination: {} as AudioContext["destination"],
     createBuffer: jest.fn(() => makeStubAudioBuffer(sampleRate, sampleRate)),
     createBufferSource: jest.fn(() => makeStubBufferSourceNode()),
     resume: jest.fn().mockResolvedValue(undefined),

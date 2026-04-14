@@ -1,4 +1,4 @@
-export type Phase = 'idle' | 'recording' | 'playing' | 'paused';
+export type Phase = "idle" | "recording" | "playing" | "paused";
 
 export type VoiceMirrorState = {
   phase: Phase;
@@ -12,4 +12,7 @@ export type VoiceMirrorState = {
   resumeFromListPlayback: () => Promise<void>;
 };
 
-export type RecordingCompleteCallback = (filePath: string, durationMs: number) => void;
+export type RecordingCompleteCallback = (
+  filePath: string,
+  durationMs: number,
+) => void;
