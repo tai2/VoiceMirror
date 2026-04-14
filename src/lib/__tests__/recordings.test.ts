@@ -1,3 +1,9 @@
+jest.mock('../sentryHelpers', () => ({
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
+
 import { loadRecordings, saveRecordings, newFilePath } from '../recordings';
 
 const store: Record<string, string> = {};

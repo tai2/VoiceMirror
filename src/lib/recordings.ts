@@ -1,4 +1,5 @@
 import { Directory, File, Paths } from 'expo-file-system';
+import { captureException, captureMessage } from './sentryHelpers';
 
 export interface Recording {
   id: string;
@@ -31,6 +32,11 @@ export async function loadRecordings(): Promise<Recording[]> {
       console.warn(
         `[recordings] Removing stale entry: ${recording.filePath} (file not found on disk)`,
       );
+      captureMessage('Stale recording entry removed (file missing)', {
+        operation: 'loadRecordings',
+        filePath: recording.filePath,
+        recordingId: recording.id,
+      }, 'warning');
     }
   }
 
@@ -46,10 +52,18 @@ export async function loadRecordings(): Promise<Recording[]> {
       console.warn(
         `[recordings] Deleting orphaned file: ${entry.uri} (not in index)`,
       );
+      captureMessage('Orphaned recording file deleted', {
+        operation: 'loadRecordings',
+        fileUri: entry.uri,
+      }, 'warning');
       try {
         entry.delete();
       } catch (e) {
         console.error(`[recordings] Failed to delete orphaned file: ${entry.uri}`, e);
+        captureException(e, {
+          operation: 'deleteOrphanedFile',
+          fileUri: entry.uri,
+        });
       }
     }
   }
