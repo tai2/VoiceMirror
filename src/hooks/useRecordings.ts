@@ -5,6 +5,7 @@ import { usePlaybackLevelHistory } from './usePlaybackLevelHistory';
 import type { Recording } from '../lib/recordings';
 import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
 import type { IAudioDecoderService } from '../services/AudioDecoderService';
+import { captureException, addBreadcrumb } from '../lib/sentryHelpers';
 
 export type PlayState = { recordingId: string; isPlaying: boolean } | null;
 
@@ -130,6 +131,12 @@ export function useRecordings(
       audioBuffer = await decoderService.decodeAudioData(recording.filePath, audioContext.sampleRate);
     } catch (e) {
       console.error('[useRecordings] decodeAudioData failed:', e);
+      captureException(e, {
+        operation: 'AudioDecoder.decodeAudioData',
+        filePath: recording.filePath,
+        recordingId: recording.id,
+        sampleRate: audioContext.sampleRate,
+      });
       isDecodingRef.current = false;
       setPlayState(null);
       await options.onDidStop();
@@ -149,6 +156,10 @@ export function useRecordings(
       void options.onDidStop();
     };
     source.start(0);
+    addBreadcrumb('recordings', 'List playback started', {
+      recordingId: recording.id,
+      durationMs: recording.durationMs,
+    });
     startPlaybackLevels(audioBuffer, 0, setLevelHistory);
   }, [playState, audioContext, decoderService, stopCurrentPlayer, options, startPlaybackLevels, stopPlaybackLevels]);
 

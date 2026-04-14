@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type AppSettings, DEFAULT_SETTINGS } from '../types/settings';
 import type { ISettingsRepository } from '../repositories/SettingsRepository';
+import { captureException } from '../lib/sentryHelpers';
 
 type SettingsContextValue = {
   settings: AppSettings;
@@ -28,20 +29,35 @@ export function SettingsProvider({
     repository.load().then((s) => {
       setSettings(s);
       setLoaded(true);
+    }).catch((e) => {
+      captureException(e, {
+        operation: 'SettingsRepository.load',
+      });
+      setLoaded(true);
     });
   }, [repository]);
 
   const updateSetting = useCallback(
     <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
       setSettings((prev) => ({ ...prev, [key]: value }));
-      void repository.save(key, value);
+      repository.save(key, value).catch((e) => {
+        captureException(e, {
+          operation: 'SettingsRepository.save',
+          key,
+          value,
+        });
+      });
     },
     [repository],
   );
 
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS);
-    void repository.resetAll();
+    repository.resetAll().catch((e) => {
+      captureException(e, {
+        operation: 'SettingsRepository.resetAll',
+      });
+    });
   }, [repository]);
 
   return (

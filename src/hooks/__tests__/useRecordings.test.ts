@@ -1,3 +1,9 @@
+jest.mock('../../lib/sentryHelpers', () => ({
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
+
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useRecordings } from '../useRecordings';
 import { StubRecordingsRepository } from '../../__tests__/stubs/stubRecordingsRepository';

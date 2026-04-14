@@ -8,6 +8,7 @@ import type { IAudioRecordingService, IAudioRecorder } from '../services/AudioRe
 import type { IAudioEncoderService } from '../services/AudioEncoderService';
 import type { IRecordingsRepository } from '../repositories/RecordingsRepository';
 import type { DetectionSettings } from '../types/settings';
+import { captureException, captureMessage, addBreadcrumb } from '../lib/sentryHelpers';
 
 const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
@@ -61,9 +62,11 @@ export function useVoiceMirror(
       const status = await recordingService.requestRecordingPermissions();
       if (status !== 'Granted') {
         setPermissionDenied(true);
+        addBreadcrumb('voicemirror', 'Microphone permission denied', undefined, 'warning');
         return;
       }
       setHasPermission(true);
+      addBreadcrumb('voicemirror', 'Microphone permission granted');
       recordingService.setAudioSessionOptions({
         iosCategory: 'playAndRecord',
         iosOptions: ['defaultToSpeaker'],
@@ -89,6 +92,11 @@ export function useVoiceMirror(
       pendingFilePathRef.current = filePath;
     } catch (e) {
       console.error('[AudioEncoder] startEncoding failed:', e);
+      captureException(e, {
+        operation: 'AudioEncoder.startEncoding',
+        filePath,
+        sampleRate: context.sampleRate,
+      });
       return;
     }
 
@@ -107,6 +115,11 @@ export function useVoiceMirror(
         encoderService.encodeChunk(slice);
       } catch (e) {
         console.error('[AudioEncoder] encodeChunk failed:', e);
+        captureException(e, {
+          operation: 'AudioEncoder.encodeChunk',
+          phase: 'catchup',
+          filePath,
+        });
         encoderFailedRef.current = true;
       }
     }
@@ -130,6 +143,9 @@ export function useVoiceMirror(
           silenceStartTimeRef.current = null;
           phaseRef.current = 'recording';
           setPhase('recording');
+          addBreadcrumb('voicemirror', 'Recording started', {
+            voiceStartFrame: voiceStartFrameRef.current,
+          });
           beginEncoding();
         }
       } else {
@@ -142,6 +158,7 @@ export function useVoiceMirror(
         silenceStartTimeRef.current = null;
         phaseRef.current = 'playing';
         setPhase('playing');
+        addBreadcrumb('voicemirror', 'Recording stopped, playing back');
         void stopAndPlay();
         return;
       }
@@ -153,6 +170,7 @@ export function useVoiceMirror(
           silenceStartTimeRef.current = null;
           phaseRef.current = 'playing';
           setPhase('playing');
+          addBreadcrumb('voicemirror', 'Recording stopped, playing back');
           void stopAndPlay();
         }
       } else if (db >= s.silenceThresholdDb) {
@@ -179,6 +197,9 @@ export function useVoiceMirror(
     await recordingService.setAudioSessionActivity(true);
     await context.resume();
     recorder.start();
+    addBreadcrumb('voicemirror', 'Monitoring started', {
+      sampleRate: context.sampleRate,
+    });
 
     recorder.onAudioReady(
       { sampleRate: context.sampleRate, bufferLength: BUFFER_LENGTH, channelCount: CHANNEL_COUNT },
@@ -203,6 +224,10 @@ export function useVoiceMirror(
             encoderService.encodeChunk(chunk);
           } catch (e) {
             console.error('[AudioEncoder] encodeChunk failed:', e);
+            captureException(e, {
+              operation: 'AudioEncoder.encodeChunk',
+              phase: 'streaming',
+            });
             encoderFailedRef.current = true;
           }
         }
@@ -244,12 +269,27 @@ export function useVoiceMirror(
         ]);
         if (durationMs === 0) {
           console.error(`[AudioEncoder] stopEncoding returned 0 for ${filePath}`);
+          captureMessage('AudioEncoder stopEncoding returned duration 0', {
+            operation: 'AudioEncoder.stopEncoding',
+            filePath,
+            sampleRate: context.sampleRate,
+          });
         }
       } catch (e) {
         console.error(`[AudioEncoder] stopEncoding threw for ${filePath}:`, e);
+        captureException(e, {
+          operation: 'AudioEncoder.stopEncoding',
+          filePath,
+          sampleRate: context.sampleRate,
+        });
       }
     } else if (filePath && encoderFailedRef.current) {
       console.error(`[AudioEncoder] skipped stopEncoding due to prior chunk error: ${filePath}`);
+      captureMessage('AudioEncoder skipped stopEncoding due to prior chunk error', {
+        operation: 'AudioEncoder.stopEncoding',
+        filePath,
+        reason: 'prior_chunk_error',
+      }, 'warning');
     }
 
     if (filePath && durationMs === 0) {
@@ -295,6 +335,7 @@ export function useVoiceMirror(
   }
 
   async function pauseMonitoring() {
+    addBreadcrumb('voicemirror', 'Monitoring paused');
     if (playerNodeRef.current) {
       playerNodeRef.current.onEnded = null;
       playerNodeRef.current.stop();
@@ -314,6 +355,11 @@ export function useVoiceMirror(
           await encoderService.stopEncoding();
         } catch (e) {
           console.error('[AudioEncoder] stopEncoding failed during pause cleanup:', e);
+          captureException(e, {
+            operation: 'AudioEncoder.stopEncoding',
+            phase: 'pause_cleanup',
+            filePath,
+          });
         }
       }
       repository.deleteFile(filePath);
@@ -328,6 +374,7 @@ export function useVoiceMirror(
   }
 
   async function resumeMonitoring() {
+    addBreadcrumb('voicemirror', 'Monitoring resumed');
     await startMonitoring();
   }
 

@@ -1,3 +1,9 @@
+jest.mock('../../lib/sentryHelpers', () => ({
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
+
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useVoiceMirror } from '../useVoiceMirror';
 import { StubAudioRecordingService } from '../../__tests__/stubs/stubAudioRecordingService';
