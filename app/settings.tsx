@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   Pressable,
   Alert,
 } from "react-native";
@@ -181,7 +180,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
+    <View style={styles.root}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -201,7 +200,7 @@ export default function SettingsScreen() {
           </Text>
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

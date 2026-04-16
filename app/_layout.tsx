@@ -1,7 +1,14 @@
 import { StatusBar } from "expo-status-bar";
-import { View, Text, StyleSheet, StatusBar as RNStatusBar } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  StatusBar as RNStatusBar,
+  Pressable,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
+import { AntDesign } from "@expo/vector-icons";
 import { useSyncExternalStore } from "react";
 import { I18nProvider } from "../src/context/I18nProvider";
 import { useTranslation } from "react-i18next";
@@ -114,6 +121,7 @@ function E2EBanner() {
 
 function RootStack() {
   const { t } = useTranslation();
+  const router = useRouter();
   return (
     <Stack
       screenOptions={{
@@ -131,7 +139,22 @@ function RootStack() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: "VoiceMirror", headerShown: false }}
+        options={{
+          title: "VoiceMirror",
+          headerShadowVisible: false,
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={({ pressed }) => pressed && { opacity: 0.6 }}
+            >
+              <AntDesign
+                name="setting"
+                size={22}
+                color={colors.textSecondary}
+              />
+            </Pressable>
+          ),
+        }}
       />
       <Stack.Screen
         name="settings"
