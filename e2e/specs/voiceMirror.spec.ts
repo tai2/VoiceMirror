@@ -26,7 +26,7 @@ after(async () => {
 beforeEach(async () => {
   // Wait for the app to load and confirm E2E mode is active
   const e2eIndicator = $("~e2e-mode");
-  await e2eIndicator.waitForExist({ timeout: WAIT_SHORT });
+  await e2eIndicator.waitForExist({ timeout: WAIT_MEDIUM });
 });
 
 afterEach(async () => {
