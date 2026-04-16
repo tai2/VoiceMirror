@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  Pressable,
-  Button,
-} from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRef, useCallback } from "react";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -21,6 +14,7 @@ import {
 } from "../context/AudioContextProvider";
 import { useServices } from "../context/ServicesProvider";
 import { useSettings } from "../context/SettingsProvider";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Design tokens
 const colors = {
