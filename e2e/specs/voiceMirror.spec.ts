@@ -7,8 +7,8 @@ const {
   silenceDurationMs: SILENCE_DURATION_MS,
 } = DEFAULT_SETTINGS;
 
-// Appium/UiAutomator2 on Android emulators can be extremely slow (10-20s per command).
-// These timeouts account for that latency.
+// UiAutomator2 commands can take several seconds.
+// These timeouts provide comfortable headroom.
 const WAIT_SHORT = 10_000;
 const WAIT_MEDIUM = 30_000;
 const WAIT_LONG = 60_000;
