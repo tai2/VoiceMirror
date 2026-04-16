@@ -1,8 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRef, useCallback } from "react";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { AntDesign } from "@expo/vector-icons";
 import { useVoiceMirror } from "../hooks/useVoiceMirror";
 import { useRecordings } from "../hooks/useRecordings";
 import { AudioLevelMeter } from "../components/AudioLevelMeter";
@@ -14,7 +12,6 @@ import {
 } from "../context/AudioContextProvider";
 import { useServices } from "../context/ServicesProvider";
 import { useSettings } from "../context/SettingsProvider";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 // Design tokens
 const colors = {
@@ -42,7 +39,6 @@ function VoiceMirrorContent() {
     recordingsRepository,
   } = useServices();
   const { settings } = useSettings();
-  const router = useRouter();
 
   const addRecordingRef = useRef<
     (filePath: string, durationMs: number) => void
@@ -116,7 +112,7 @@ function VoiceMirrorContent() {
 
   if (permissionDenied) {
     return (
-      <SafeAreaView style={styles.root}>
+      <View style={styles.root}>
         <View style={styles.center}>
           <View style={styles.errorCard}>
             <View style={styles.errorIconContainer}>
@@ -126,39 +122,25 @@ function VoiceMirrorContent() {
             <Text style={styles.errorBody}>{t("main.error_body")}</Text>
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!hasPermission) {
     return (
-      <SafeAreaView style={styles.root}>
+      <View style={styles.root}>
         <View style={styles.center}>
           <View style={styles.loadingContainer}>
             <View style={styles.loadingDot} />
             <Text style={styles.hint}>{t("main.hint_requesting")}</Text>
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.topBar}>
-        <Text style={styles.appTitle}>VoiceMirror</Text>
-        <Pressable
-          onPress={() => router.push("/settings")}
-          style={({ pressed }) => [
-            styles.settingsButton,
-            pressed && styles.settingsButtonPressed,
-          ]}
-        >
-          <View style={styles.settingsIconContainer}>
-            <AntDesign name="setting" size={20} color={colors.textSecondary} />
-          </View>
-        </Pressable>
-      </View>
+    <View style={styles.root}>
       <View style={[styles.monitorCard, { borderColor: stateColor }]}>
         <PhaseDisplay phase={meterPhase} />
         <View style={[styles.waveformBox, { borderColor: `${stateColor}33` }]}>
@@ -213,7 +195,7 @@ function VoiceMirrorContent() {
           disabled={phase === "recording"}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -229,36 +211,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  appTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  settingsButton: {
-    padding: 4,
-  },
-  settingsButtonPressed: {
-    opacity: 0.6,
-  },
-  settingsIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   center: {
     flex: 1,
