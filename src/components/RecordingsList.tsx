@@ -33,7 +33,12 @@ export function RecordingsList({
 
   if (recordings.length === 0) {
     return (
-      <View style={styles.empty}>
+      <View
+        style={styles.empty}
+        accessible={true}
+        accessibilityLabel="recordings-empty"
+        testID="recordings-empty"
+      >
         <View style={styles.emptyIconContainer}>
           <View style={styles.emptyIcon} />
           <View style={styles.emptyIconBar1} />
