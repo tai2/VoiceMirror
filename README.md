@@ -107,7 +107,7 @@ For Android, make sure:
 To run a specific test case:
 
 ```sh
-pnpm run e2e:ios -- --mochaOpts.grep "partial swipe reveals delete button"
+pnpm run e2e:ios --mochaOpts.grep "partial swipe reveals delete button"
 ```
 
 ## Register a device (iOS internal distribution)

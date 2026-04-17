@@ -131,10 +131,7 @@ async function swipeLeftOnRow(selector: string, distance: number) {
     .perform();
 }
 
-// Swipeable from react-native-gesture-handler doesn't respond to UiAutomator2
-// automated touch events on Android. These tests only run on iOS.
-const describeSwipe = browser.isIOS ? describe : describe.skip;
-describeSwipe("VoiceMirror — swipe to delete", () => {
+describe("VoiceMirror — swipe to delete", () => {
   beforeEach(async () => {
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
     await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
@@ -147,7 +144,8 @@ describeSwipe("VoiceMirror — swipe to delete", () => {
     await $(sel).waitForExist({ timeout: WAIT_SHORT });
 
     // Swipe on the play button element (part of the row)
-    await swipeLeftOnRow(sel, 150);
+    const { width } = await driver.getWindowSize();
+    await swipeLeftOnRow(sel, width * 0.3);
 
     const deleteButton = $("~delete-recording");
     await deleteButton.waitForDisplayed({ timeout: WAIT_SHORT });
