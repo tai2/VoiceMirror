@@ -32,7 +32,7 @@ export const config: WdioConfig = {
   connectionRetryTimeout: 120_000,
   connectionRetryCount: 3,
 
-  services: [["appium", { args: { logLevel: "warn" } }]],
+  services: [["appium", {}]],
   framework: "mocha",
 
   mochaOpts: {
