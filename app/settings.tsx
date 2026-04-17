@@ -189,6 +189,9 @@ export default function SettingsScreen() {
           <SettingSlider key={config.key} config={config} />
         ))}
         <Pressable
+          accessible={true}
+          accessibilityLabel="reset-settings-button"
+          testID="reset-settings-button"
           style={({ pressed }) => [
             styles.resetButton,
             pressed && styles.resetButtonPressed,

@@ -145,12 +145,16 @@ function RootStack() {
           headerRight: () => (
             <Pressable
               onPress={() => router.push("/settings")}
+              accessible={true}
+              accessibilityLabel="settings-button"
+              testID="settings-button"
               style={({ pressed }) => pressed && { opacity: 0.6 }}
             >
               <AntDesign
                 name="setting"
                 size={22}
                 color={colors.textSecondary}
+                importantForAccessibility="no-hide-descendants"
               />
             </Pressable>
           ),
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
   },
   e2eBanner: {
     position: "absolute",
-    top: RNStatusBar.currentHeight ?? 0,
+    top: (RNStatusBar.currentHeight ?? 0) + 56,
     right: 0,
     flexDirection: "row",
     alignItems: "center",

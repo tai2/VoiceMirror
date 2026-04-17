@@ -184,7 +184,13 @@ function VoiceMirrorContent() {
             {t("recordings.title") || "Recordings"}
           </Text>
           <View style={styles.recordingsCountBadge}>
-            <Text style={styles.recordingsCount}>{recordings.length}</Text>
+            <Text
+              style={styles.recordingsCount}
+              accessibilityLabel="recordings-count"
+              testID="recordings-count"
+            >
+              {recordings.length}
+            </Text>
           </View>
         </View>
         <RecordingsList

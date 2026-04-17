@@ -131,6 +131,132 @@ async function swipeLeftOnRow(selector: string, distance: number) {
     .perform();
 }
 
+describe("VoiceMirror — settings navigation", () => {
+  it("navigates to settings screen and back", async () => {
+    await bridge.sendSilence(SILENCE_DURATION_MS + 500);
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    await $("~settings-button").click();
+
+    await $("~reset-settings-button").scrollIntoView();
+    await $("~reset-settings-button").waitForExist({ timeout: WAIT_SHORT });
+
+    await driver.back();
+
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+  });
+});
+
+describe("VoiceMirror — empty state", () => {
+  it("shows empty state when no recordings exist", async () => {
+    await bridge.sendSilence(SILENCE_DURATION_MS + 500);
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    await expect($("~recordings-empty")).toBeDisplayed();
+  });
+});
+
+describe("VoiceMirror — list playback", () => {
+  beforeEach(async () => {
+    await bridge.sendSilence(SILENCE_DURATION_MS + 500);
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+  });
+
+  it("plays a recording from the list and shows playing phase", async () => {
+    await createRecording();
+
+    const sel = recordingSelector();
+    const playButton = $(sel);
+    await playButton.waitForExist({ timeout: WAIT_SHORT });
+
+    await playButton.click();
+
+    await $("~phase-playing").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_LONG });
+  });
+
+  it("stops playback when tapping the same recording again", async () => {
+    await createRecording();
+
+    const sel = recordingSelector();
+    const playButton = $(sel);
+    await playButton.waitForExist({ timeout: WAIT_SHORT });
+
+    await playButton.click();
+    await $("~phase-playing").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    await playButton.click();
+
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_MEDIUM });
+  });
+
+  it("resumes monitoring after list playback ends naturally", async () => {
+    await createRecording();
+
+    const sel = recordingSelector();
+    await $(sel).waitForExist({ timeout: WAIT_SHORT });
+
+    await $(sel).click();
+    await $("~phase-playing").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_LONG });
+
+    await bridge.sendVoice(VOICE_ONSET_MS + 200);
+    await $("~phase-recording").waitForDisplayed({ timeout: WAIT_SHORT });
+  });
+});
+
+describe("VoiceMirror — multiple recordings", () => {
+  beforeEach(async () => {
+    await bridge.sendSilence(SILENCE_DURATION_MS + 500);
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+  });
+
+  it("accumulates multiple recordings in the list", async () => {
+    await createRecording();
+
+    const sel = recordingSelector();
+    await $(sel).waitForExist({ timeout: WAIT_SHORT });
+    const countAfterFirst = await $$(sel).length;
+    expect(countAfterFirst).toBe(1);
+
+    await createRecording();
+
+    await browser.waitUntil(
+      async () => {
+        const count = await $$(sel).length;
+        return count === 2;
+      },
+      { timeout: WAIT_SHORT, timeoutMsg: "Expected 2 recordings in the list" },
+    );
+  });
+});
+
+describe("VoiceMirror — pause during recording", () => {
+  beforeEach(async () => {
+    await bridge.sendSilence(SILENCE_DURATION_MS + 500);
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+  });
+
+  it("discards recording when paused mid-recording", async () => {
+    await expect($("~recordings-empty")).toBeDisplayed();
+
+    await bridge.sendVoice(VOICE_ONSET_MS + 200);
+    await $("~phase-recording").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    await $("~toggle-pause-button").click();
+    await $("~phase-paused").waitForDisplayed({ timeout: WAIT_SHORT });
+
+    const sel = recordingSelector();
+    const count = await $$(sel).length;
+    expect(count).toBe(0);
+
+    await $("~toggle-pause-button").click();
+    await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
+  });
+});
+
 describe("VoiceMirror — swipe to delete", () => {
   beforeEach(async () => {
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
