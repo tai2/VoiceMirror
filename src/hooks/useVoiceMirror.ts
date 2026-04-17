@@ -25,6 +25,7 @@ const BUFFER_LENGTH = 4096;
 const CHANNEL_COUNT = 1;
 const MAX_IDLE_BUFFER_SECS = 30;
 const SAFETY_MARGIN_MS = 100;
+const GAP_TOLERANCE_MS = 200;
 
 function findPreRollStartFrame(
   chunks: Float32Array[],
@@ -35,18 +36,36 @@ function findPreRollStartFrame(
 ): number {
   const bufferStartFrame = totalFrames - bufferedFrames;
   const safetyMarginFrames = Math.round((SAFETY_MARGIN_MS / 1000) * sampleRate);
+  const gapToleranceFrames = Math.round((GAP_TOLERANCE_MS / 1000) * sampleRate);
 
   let framesToEnd = 0;
+  let gapFrames = 0;
+  let lastOnsetFrame: number | null = null;
+
   for (let i = chunks.length - 1; i >= 0; i--) {
     const chunk = chunks[i];
     const { db } = computeLevel(chunk, 0, chunk.length);
     framesToEnd += chunk.length;
 
     if (db < silenceThresholdDb) {
-      const onsetFrame = totalFrames - framesToEnd + chunk.length;
-      const preRollFrame = onsetFrame - safetyMarginFrames;
-      return Math.max(bufferStartFrame, preRollFrame);
+      if (lastOnsetFrame === null) {
+        lastOnsetFrame = totalFrames - framesToEnd + chunk.length;
+      }
+      gapFrames += chunk.length;
+
+      if (gapFrames > gapToleranceFrames) {
+        const preRollFrame = lastOnsetFrame - safetyMarginFrames;
+        return Math.max(bufferStartFrame, preRollFrame);
+      }
+    } else {
+      gapFrames = 0;
+      lastOnsetFrame = null;
     }
+  }
+
+  if (lastOnsetFrame !== null && gapFrames > gapToleranceFrames) {
+    const preRollFrame = lastOnsetFrame - safetyMarginFrames;
+    return Math.max(bufferStartFrame, preRollFrame);
   }
 
   return bufferStartFrame;

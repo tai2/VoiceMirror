@@ -687,6 +687,92 @@ describe("useVoiceMirror — pre-roll", () => {
     expect(encoderService.encodeChunk).toHaveBeenCalled();
   });
 
+  it("bridges brief intra-word silence gaps to capture plosive onsets like 'kitto'", async () => {
+    const { recordingService, encoderService } = await setupWithPermission();
+
+    // Background silence (sustained)
+    act(() => {
+      for (let i = 0; i < 5; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeSilentChunk());
+      }
+    });
+
+    // Brief plosive burst ("ki") - above voice threshold but too short for onset
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeLoudChunk());
+    });
+
+    // Intra-word silence gap (geminate consonant "っ") - 1 chunk, below gap tolerance
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeSilentChunk());
+    });
+
+    // Sustained voice ("tto") - triggers voice onset detection
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
+
+    const totalEncodedFrames = encoderService.encodeChunk.mock.calls.reduce(
+      (sum: number, [chunk]: [Float32Array]) => sum + chunk.length,
+      0,
+    );
+
+    // The encoded audio should include the "ki" burst and the gap,
+    // not just the voice onset portion.
+    const voiceOnsetFrames = Math.round((VOICE_ONSET_MS / 1000) * 44100);
+    const burstAndGapFrames = 2 * Math.round((100 / 1000) * 44100);
+    expect(totalEncodedFrames).toBeGreaterThan(
+      voiceOnsetFrames + burstAndGapFrames,
+    );
+  });
+
+  it("does not bridge silence gaps longer than the gap tolerance", async () => {
+    const { recordingService, encoderService } = await setupWithPermission();
+
+    // Background silence
+    act(() => {
+      for (let i = 0; i < 5; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeSilentChunk());
+      }
+    });
+
+    // A loud burst (some noise or false start)
+    act(() => {
+      jest.advanceTimersByTime(100);
+      recordingService.recorder.simulateChunk(makeLoudChunk());
+    });
+
+    // Long silence gap (3 chunks = 300ms, exceeds 200ms gap tolerance)
+    act(() => {
+      for (let i = 0; i < 3; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeSilentChunk());
+      }
+    });
+
+    // Voice onset
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
+
+    const totalEncodedFrames = encoderService.encodeChunk.mock.calls.reduce(
+      (sum: number, [chunk]: [Float32Array]) => sum + chunk.length,
+      0,
+    );
+
+    // The loud burst before the long gap should NOT be included.
+    const voiceOnsetFrames = Math.round((VOICE_ONSET_MS / 1000) * 44100);
+    const burstAndGapFrames =
+      Math.round((100 / 1000) * 44100) + 3 * Math.round((100 / 1000) * 44100);
+    expect(totalEncodedFrames).toBeLessThan(
+      voiceOnsetFrames + burstAndGapFrames,
+    );
+  });
+
   it("captures gradual speech attack by scanning backward to silence threshold", async () => {
     const { recordingService, encoderService } = await setupWithPermission();
 
