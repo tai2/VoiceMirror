@@ -369,21 +369,33 @@ export function useVoiceMirror(
       onRecordingComplete(filePath, durationMs);
     }
 
-    const bufferedFrames = bufferedFramesRef.current;
+    // Snapshot chunks and compute actual size to avoid any mismatch between
+    // bufferedFramesRef and real chunk data (native copyToChannel has no bounds
+    // checking and will segfault on overflow).
+    const chunks = chunksRef.current;
+    const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+    if (totalLength === 0) {
+      await startMonitoring();
+      return;
+    }
+    const merged = new Float32Array(totalLength);
+    let pos = 0;
+    for (const chunk of chunks) {
+      merged.set(chunk, pos);
+      pos += chunk.length;
+    }
     const audioBuffer = context.createBuffer(
       1,
-      bufferedFrames,
+      totalLength,
       context.sampleRate,
     );
-    let offset = 0;
-    for (const chunk of chunksRef.current) {
-      audioBuffer.copyToChannel(chunk, 0, offset);
-      offset += chunk.length;
-    }
+    audioBuffer.copyToChannel(merged, 0, 0);
 
-    const bufferStartFrame = totalFramesRef.current - bufferedFramesRef.current;
-    const voiceStartSecs =
-      (voiceStartFrameRef.current - bufferStartFrame) / context.sampleRate;
+    const bufferStartFrame = totalFramesRef.current - totalLength;
+    const voiceStartSecs = Math.max(
+      0,
+      (voiceStartFrameRef.current - bufferStartFrame) / context.sampleRate,
+    );
 
     const playerNode = context.createBufferSource();
     playerNodeRef.current = playerNode;
