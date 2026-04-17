@@ -36,6 +36,13 @@ function makeSilentChunk(durationMs = 100, sampleRate = 44100): Float32Array {
   return new Float32Array(numFrames).fill(rms);
 }
 
+function makeRisingChunk(durationMs = 100, sampleRate = 44100): Float32Array {
+  const numFrames = Math.round((durationMs / 1000) * sampleRate);
+  const midDb = (SILENCE_THRESHOLD_DB + VOICE_THRESHOLD_DB) / 2;
+  const rms = Math.pow(10, midDb / 20);
+  return new Float32Array(numFrames).fill(rms);
+}
+
 function setup() {
   const onRecordingComplete = jest.fn();
   const recordingService = new StubAudioRecordingService();
@@ -669,7 +676,7 @@ describe("useVoiceMirror — pre-roll", () => {
     expect(totalEncodedFrames).toBeGreaterThan(voiceOnsetFrames);
   });
 
-  it("clamps pre-roll to buffer start when less than 100ms of audio exists", async () => {
+  it("clamps pre-roll to buffer start when buffer is very short", async () => {
     const { recordingService, encoderService } = await setupWithPermission();
 
     act(() => {
@@ -678,6 +685,37 @@ describe("useVoiceMirror — pre-roll", () => {
 
     expect(encoderService.startEncoding).toHaveBeenCalledTimes(1);
     expect(encoderService.encodeChunk).toHaveBeenCalled();
+  });
+
+  it("captures gradual speech attack by scanning backward to silence threshold", async () => {
+    const { recordingService, encoderService } = await setupWithPermission();
+
+    act(() => {
+      for (let i = 0; i < 3; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeSilentChunk());
+      }
+    });
+
+    act(() => {
+      for (let i = 0; i < 3; i++) {
+        jest.advanceTimersByTime(100);
+        recordingService.recorder.simulateChunk(makeRisingChunk());
+      }
+    });
+
+    act(() => {
+      simulateVoiceOnset(recordingService);
+    });
+
+    const totalEncodedFrames = encoderService.encodeChunk.mock.calls.reduce(
+      (sum: number, [chunk]: [Float32Array]) => sum + chunk.length,
+      0,
+    );
+
+    const voiceOnsetFrames = Math.round((VOICE_ONSET_MS / 1000) * 44100);
+    const risingFrames = 3 * Math.round((100 / 1000) * 44100);
+    expect(totalEncodedFrames).toBeGreaterThan(voiceOnsetFrames + risingFrames);
   });
 });
 
