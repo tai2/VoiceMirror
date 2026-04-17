@@ -7,8 +7,8 @@ const {
   silenceDurationMs: SILENCE_DURATION_MS,
 } = DEFAULT_SETTINGS;
 
-// Appium/UiAutomator2 on Android emulators can be extremely slow (10-20s per command).
-// These timeouts account for that latency.
+// UiAutomator2 commands can take several seconds.
+// These timeouts provide comfortable headroom.
 const WAIT_SHORT = 10_000;
 const WAIT_MEDIUM = 30_000;
 const WAIT_LONG = 60_000;
@@ -26,7 +26,7 @@ after(async () => {
 beforeEach(async () => {
   // Wait for the app to load and confirm E2E mode is active
   const e2eIndicator = $("~e2e-mode");
-  await e2eIndicator.waitForExist({ timeout: WAIT_SHORT });
+  await e2eIndicator.waitForExist({ timeout: WAIT_MEDIUM });
 });
 
 afterEach(async () => {
@@ -131,10 +131,7 @@ async function swipeLeftOnRow(selector: string, distance: number) {
     .perform();
 }
 
-// Swipeable from react-native-gesture-handler doesn't respond to UiAutomator2
-// automated touch events on Android. These tests only run on iOS.
-const describeSwipe = browser.isIOS ? describe : describe.skip;
-describeSwipe("VoiceMirror — swipe to delete", () => {
+describe("VoiceMirror — swipe to delete", () => {
   beforeEach(async () => {
     await bridge.sendSilence(SILENCE_DURATION_MS + 500);
     await $("~phase-idle").waitForDisplayed({ timeout: WAIT_SHORT });
@@ -147,7 +144,8 @@ describeSwipe("VoiceMirror — swipe to delete", () => {
     await $(sel).waitForExist({ timeout: WAIT_SHORT });
 
     // Swipe on the play button element (part of the row)
-    await swipeLeftOnRow(sel, 150);
+    const { width } = await driver.getWindowSize();
+    await swipeLeftOnRow(sel, width * 0.3);
 
     const deleteButton = $("~delete-recording");
     await deleteButton.waitForDisplayed({ timeout: WAIT_SHORT });

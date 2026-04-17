@@ -10,7 +10,9 @@ import type {
   SessionOptions,
 } from "react-native-audio-api";
 
-const WS_HOST = Platform.OS === "android" ? "10.0.2.2" : "127.0.0.1";
+const WS_HOST =
+  process.env.EXPO_PUBLIC_E2E_WS_HOST ??
+  (Platform.OS === "android" ? "10.0.2.2" : "127.0.0.1");
 const WS_PORT = 9876;
 
 const RECONNECT_DELAY_MS = 500;
