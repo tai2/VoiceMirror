@@ -35,6 +35,9 @@ Sentry.init({
   // Enable Logs
   enableLogs: true,
 
+  // Collect Android tombstones for richer native crash context
+  enableTombstone: true,
+
   // Configure Session Replay
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1,
