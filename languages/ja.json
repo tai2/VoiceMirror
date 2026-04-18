@@ -1,5 +1,5 @@
 {
   "ios": {
-    "NSMicrophoneUsageDescription": "VoiceMirrorがあなたの声を録音し、すぐに再生します。"
+    "NSMicrophoneUsageDescription": "VoiceRepeatがあなたの声を録音し、すぐに再生します。"
   }
 }

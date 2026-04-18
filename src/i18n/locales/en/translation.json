@@ -1,6 +1,6 @@
 {
   "main.error_title": "Microphone access required",
-  "main.error_body": "Go to Settings → VoiceMirror → Microphone and allow access.",
+  "main.error_body": "Go to Settings → VoiceRepeat → Microphone and allow access.",
   "main.hint_requesting": "Requesting microphone access…",
   "main.hint_paused": "Monitoring paused.",
   "main.hint_listening": "Speak to begin. Silence ends the take.",

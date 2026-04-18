@@ -20,7 +20,7 @@ export const config: WdioConfig = {
       "appium:deviceName": process.env.E2E_IOS_DEVICE_NAME ?? "iPhone 17 Pro",
       "appium:platformVersion": process.env.E2E_IOS_PLATFORM_VERSION ?? "26.3",
       "appium:automationName": "XCUITest",
-      "appium:app": path.resolve(__dirname, "../artifacts/VoiceMirror.app"),
+      "appium:app": path.resolve(__dirname, "../artifacts/VoiceRepeat.app"),
       "appium:noReset": false,
     },
   ],

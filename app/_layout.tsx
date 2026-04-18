@@ -143,7 +143,7 @@ function RootStack() {
       <Stack.Screen
         name="index"
         options={{
-          title: "VoiceMirror",
+          title: "VoiceRepeat",
           headerShadowVisible: false,
           headerRight: () => (
             <Pressable

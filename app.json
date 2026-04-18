@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "VoiceMirror",
+    "name": "VoiceRepeat",
     "slug": "voice-mirror",
     "scheme": "voicemirror",
     "version": "1.0.0",
@@ -45,7 +45,7 @@
       [
         "react-native-audio-api",
         {
-          "iosMicrophonePermission": "VoiceMirror records your voice so you can immediately hear yourself back.",
+          "iosMicrophonePermission": "VoiceRepeat records your voice so you can immediately hear yourself back.",
           "androidPermissions": ["android.permission.RECORD_AUDIO"]
         }
       ],

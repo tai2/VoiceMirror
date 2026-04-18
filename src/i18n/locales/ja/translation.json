@@ -1,6 +1,6 @@
 {
   "main.error_title": "マイクへのアクセスが必要です",
-  "main.error_body": "設定 → VoiceMirror → マイクからアクセスを許可してください。",
+  "main.error_body": "設定 → VoiceRepeat → マイクからアクセスを許可してください。",
   "main.hint_requesting": "マイクへのアクセスをリクエスト中…",
   "main.hint_paused": "モニタリング一時停止中",
   "main.hint_listening": "話しかけてください。沈黙で終了します。",

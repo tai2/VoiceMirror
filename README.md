@@ -1,4 +1,4 @@
-# VoiceMirror
+# ~VoiceMirror~ VoiceRepeat
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ E2E tests use WebDriverIO + Appium to drive the app on a real device (Android) o
 #### iOS (simulator)
 
 ```sh
-pnpm run build:e2e:ios:local       # → artifacts/VoiceMirror.app
+pnpm run build:e2e:ios:local       # → artifacts/VoiceRepeat.app
 ```
 
 #### Android (real device)
@@ -77,7 +77,7 @@ ipconfig getifaddr en0
 # Set it in .env or export directly:
 export E2E_WS_HOST=192.168.1.42
 
-pnpm run build:e2e:android:local   # → artifacts/VoiceMirror.apk
+pnpm run build:e2e:android:local   # → artifacts/VoiceRepeat.apk
 ```
 
 The build will fail with a clear error if `E2E_WS_HOST` is not set.

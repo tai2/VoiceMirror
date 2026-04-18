@@ -1,5 +1,5 @@
 {
   "ios": {
-    "NSMicrophoneUsageDescription": "VoiceMirror records your voice so you can immediately hear yourself back."
+    "NSMicrophoneUsageDescription": "VoiceRepeat records your voice so you can immediately hear yourself back."
   }
 }
