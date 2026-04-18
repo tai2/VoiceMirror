@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
   },
   deleteAction: {
     width: ACTION_WIDTH,
+    height: "100%",
     backgroundColor: colors.danger,
     justifyContent: "center",
     alignItems: "center",
