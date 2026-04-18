@@ -1,5 +1,7 @@
 # ~VoiceMirror~ VoiceRepeat
 
+<img alt="A screenshot of VoiceRepeat app" src=".github/images/screenshot.png" width="400" />
+
 ## Prerequisites
 
 - [mise](https://mise.jdx.dev/) — manages Node.js and pnpm versions
