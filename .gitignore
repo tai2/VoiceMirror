@@ -45,3 +45,6 @@ yarn-error.*
 # Claude code workflow
 research.md
 .env.local
+
+# Google Play
+google-play-service-account.json
