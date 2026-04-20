@@ -19,7 +19,7 @@
     "build:e2e:ios": "npx eas-cli@latest build --profile e2e --platform ios",
     "build:e2e:android": "npx eas-cli@latest build --profile e2e --platform android",
     "build:e2e:ios:local": "export EXPO_PUBLIC_E2E=1 && npx expo prebuild --platform ios && xcodebuild -workspace ios/VoiceRepeat.xcworkspace -scheme VoiceRepeat -configuration Release -sdk iphonesimulator -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build && mkdir -p artifacts && rm -rf artifacts/VoiceRepeat.app && cp -r ios/build/Build/Products/Release-iphonesimulator/VoiceRepeat.app artifacts/VoiceRepeat.app",
-    "build:e2e:android:local": "export EXPO_PUBLIC_E2E=1 && export EXPO_PUBLIC_E2E_WS_HOST=${E2E_WS_HOST:?\"Set E2E_WS_HOST to your machine's LAN IP (e.g. 192.168.1.42)\"} && npx expo prebuild --platform android && (cd android && ./gradlew assembleRelease) && mkdir -p artifacts && cp android/app/build/outputs/apk/release/app-release*.apk artifacts/VoiceRepeat.apk",
+    "build:e2e:android:local": "export EXPO_PUBLIC_E2E=1 && npx expo prebuild --platform android && (cd android && ./gradlew assembleRelease) && mkdir -p artifacts && cp android/app/build/outputs/apk/release/app-release*.apk artifacts/VoiceRepeat.apk",
     "e2e:ios": "wdio run e2e/wdio.ios.conf.ts",
     "e2e:android": "wdio run e2e/wdio.android.conf.ts",
     "test": "jest --watchAll",

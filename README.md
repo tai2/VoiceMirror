@@ -70,7 +70,7 @@ pnpm run build:e2e:ios:local       # → artifacts/VoiceRepeat.app
 
 #### Android (real device)
 
-Set `E2E_WS_HOST` to your machine's LAN IP before building. This IP is baked into the APK so the app can connect back to the test runner's WebSocket bridge over the network.
+Set `EXPO_PUBLIC_E2E_WS_HOST` to your machine's LAN IP before building. This IP is baked into the APK so the app can connect back to the test runner's WebSocket bridge over the network.
 
 ```sh
 # Find your LAN IP (macOS):
@@ -81,8 +81,6 @@ export E2E_WS_HOST=192.168.1.42
 
 pnpm run build:e2e:android:local   # → artifacts/VoiceRepeat.apk
 ```
-
-The build will fail with a clear error if `E2E_WS_HOST` is not set.
 
 #### EAS (cloud)
 

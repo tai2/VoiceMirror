@@ -13,11 +13,17 @@ export const config: WdioConfig = {
       platformName: "Android",
       "appium:automationName": "UiAutomator2",
       "appium:app": path.resolve(__dirname, "../artifacts/VoiceRepeat.apk"),
-      "appium:udid": process.env.E2E_ANDROID_UDID,
       "appium:autoGrantPermissions": true,
       "appium:uiautomator2ServerInstallTimeout": 60_000,
       "appium:uiautomator2ServerLaunchTimeout": 60_000,
       "appium:noReset": false,
+      ...(process.env.E2E_ANDROID_UDID
+        ? {
+            "appium:udid": process.env.E2E_ANDROID_UDID,
+          }
+        : {
+            "appium:avd": process.env.E2E_ANDROID_AVD,
+          }),
     },
   ],
 
